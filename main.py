@@ -20,7 +20,10 @@ EARTH_METERS_PER_DEGREE = EARTH_METERS_PER_RADIAN * math.pi / 180
 
 # This data is publicly available as a GeoJSON file from https://catalogue.data.wa.gov.au/dataset/mrwa-road-network
 path_to_gdb = r"data.gdb"
-gdf_all_roads: gpd.GeoDataFrame = gpd.read_file(path_to_gdb, layer="NTWK_IRIS_Road_Network_20201029")
+gdf_all_roads: gpd.GeoDataFrame = gpd.read_file(
+	path_to_gdb,
+	layer="NTWK_IRIS_Road_Network_20201029"
+)
 
 
 def cut_linestring(linestring: LineString, slk_at_which_to_cut: float, linestring_start_slk: float, linestring_end_slk: float) -> [LineString, LineString]:
