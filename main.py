@@ -23,26 +23,33 @@ path_to_gdb = r"data.gdb"
 gdf_all_roads: gpd.GeoDataFrame = gpd.read_file(path_to_gdb, layer="NTWK_IRIS_Road_Network_20201029")
 
 
-def cut_linestring(line: LineString, slk_distance: float, row_start_slk: float, row_end_slk: float) -> [LineString, LineString]:
+def cut_linestring(linestring: LineString, slk_at_which_to_cut: float, linestring_start_slk: float, linestring_end_slk: float) -> [LineString, LineString]:
 	# Cuts a line in two at a distance from its starting point
-	percent = slk_distance / (row_end_slk - row_start_slk)
-	distance = line.length*percent
-	if distance <= 0.0:
-		return [None, LineString(line)]
-	if distance >= line.length:
-		return [LineString(line), None]
-	coords = list(line.coords)
-	for i, p in enumerate(coords):
-		pd = line.project(Point(p))
-		if pd == distance:
-			return [
-				LineString(coords[:i+1]),
-				LineString(coords[i:])]
-		if pd > distance:
-			cp = line.interpolate(distance)
-			return [
-				LineString(coords[:i] + [(cp.x, cp.y)]),
-				LineString([(cp.x, cp.y)] + coords[i:])]
+	linestring_length_in_slk_units = linestring_end_slk - linestring_start_slk
+	distance_along_linestring_in_slk_units = slk_at_which_to_cut - linestring_start_slk
+	percent = distance_along_linestring_in_slk_units / linestring_length_in_slk_units
+	length_of_linestring_in_data_units = linestring.length
+	distance_along_linestring_in_data_units = length_of_linestring_in_data_units * percent
+	
+	if distance_along_linestring_in_data_units <= 0.0:
+		return [None, LineString(linestring)]
+	if distance_along_linestring_in_data_units >= length_of_linestring_in_data_units:
+		return [LineString(linestring), None]
+	else:
+		linestring_coordinates = list(linestring.coords)
+		for index, vertex in enumerate(linestring_coordinates):
+			projected_distance_of_vertex = linestring.project(Point(vertex))
+			if math.isclose(projected_distance_of_vertex, distance_along_linestring_in_data_units):
+				return [
+					LineString(linestring_coordinates[:index+1]),
+					LineString(linestring_coordinates[index:])
+				]
+			if projected_distance_of_vertex > distance_along_linestring_in_data_units:
+				new_vertex_at_cut = linestring.interpolate(distance_along_linestring_in_data_units)
+				return [
+					LineString(linestring_coordinates[:index] + [(new_vertex_at_cut.x, new_vertex_at_cut.y)]),
+					LineString([(new_vertex_at_cut.x, new_vertex_at_cut.y)] + linestring_coordinates[index:])
+				]
 
 
 ERROR_SUGGEST_CORRECT = "Try /?road=H001&slk_from=6.3&slk_to=7 or /?road=H001,H012&slk_from=6.3,16.4&slk_to=7,17.35"
@@ -140,8 +147,10 @@ class Slice_Network_Exception(Exception):
 
 
 def slice_network(road: str, request_slk_from: float, request_slk_to: float, offset: float, cway: str) -> List[str]:
+	
 	if request_slk_to <= request_slk_from:
 		raise Slice_Network_Exception("Invalid slk interval; either reversed or zero length")
+	
 	if math.isclose(request_slk_from, request_slk_to):
 		raise Slice_Network_Exception("Infinitesimal length slk interval provided.")
 	
@@ -184,20 +193,21 @@ def slice_network(road: str, request_slk_from: float, request_slk_to: float, off
 			# request contains row linestring entirely therefore return the entire linestring
 			output.append(row_linestring)
 		else:
+			# TODO: this part of the code is still producing errors at the ends of the linestrings:
 			part_a, part_bc = cut_linestring(
 				row_linestring,
-				slk_distance=request_slk_from - row_slk_from,
-				row_start_slk=row_slk_from,
-				row_end_slk=row_slk_to
+				slk_at_which_to_cut=request_slk_from,
+				linestring_start_slk=row_slk_from,
+				linestring_end_slk=row_slk_to
 			)
 			part_b = None
-			part_c = None
 			if part_bc is not None:
-				part_b, part_c = cut_linestring(
+				
+				part_b, _ = cut_linestring(
 					part_bc,
-					slk_distance=request_slk_to - request_slk_from,
-					row_start_slk=row_slk_from + max(0.0, request_slk_from - row_slk_from),
-					row_end_slk=row_slk_to
+					slk_at_which_to_cut=request_slk_to,
+					linestring_start_slk=max(row_slk_from, request_slk_from),
+					linestring_end_slk=row_slk_to
 				)
 			else:
 				pass  # there is no intersect
