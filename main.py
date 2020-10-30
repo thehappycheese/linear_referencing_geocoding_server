@@ -9,8 +9,6 @@ from shapely.geometry import Point
 from shapely.geometry.linestring import LineString
 from shapely.geometry.multilinestring import MultiLineString
 
-from NicksIntervals.iInterval import iInterval
-
 app = Flask(__name__)
 
 from flask import Response
@@ -141,18 +139,14 @@ class Slice_Network_Exception(Exception):
 		self.message = message
 
 
-def slice_network(road: str, slk_from: float, slk_to: float, offset: float, cway: str) -> List[str]:
-	try:
-		request_slk = iInterval.closed(slk_from, slk_to)
-	except:
-		raise Slice_Network_Exception("Invalid slk interval")
-	
-	if request_slk.is_degenerate or request_slk.is_infinitesimal:
-		# TODO: provide point geometry results
-		raise Slice_Network_Exception("Requested slk interval is of zero length. In future we can provide point geometry results. For now, this request is rejected.")
+def slice_network(road: str, request_slk_from: float, request_slk_to: float, offset: float, cway: str) -> List[str]:
+	if request_slk_to <= request_slk_from:
+		raise Slice_Network_Exception("Invalid slk interval; either reversed or zero length")
+	if math.isclose(request_slk_from, request_slk_to):
+		raise Slice_Network_Exception("Infinitesimal length slk interval provided.")
 	
 	m = gdf_all_roads[
-		(gdf_all_roads["ROAD"] == road) & (gdf_all_roads["START_SLK"] <= slk_to) & (gdf_all_roads["END_SLK"] >= slk_from)
+		(gdf_all_roads["ROAD"] == road) & (gdf_all_roads["START_SLK"] <= request_slk_to) & (gdf_all_roads["END_SLK"] >= request_slk_from)
 	]
 	
 	if cway == "LS":
@@ -177,21 +171,22 @@ def slice_network(road: str, slk_from: float, slk_to: float, offset: float, cway
 	for index, row in m.iterrows():
 		row_slk_from = float(row["START_SLK"])
 		row_slk_to = float(row["END_SLK"])
-		row_slk = iInterval.closed(row_slk_from, row_slk_to)
+		
 		multilinestring = row.geometry
 		if multilinestring.geom_type != "MultiLineString":
 			raise Exception("Encountered unexpected geometry in the road network geometry data. The shape of a row was not a MultiLineString as expected.")
 		if len(multilinestring.geoms) != 1:
 			raise Exception("Encountered unexpected geometry in the road network geometry data. The row's geometry was a MultiLineString, but it did not contain exactly one LineString as expected.")
-		linestring: LineString = multilinestring.geoms[0]
 		
-		if request_slk.contains_interval(row_slk):
-			# contained entirely
-			output.append(linestring)
+		row_linestring: LineString = multilinestring.geoms[0]
+		
+		if (request_slk_from < row_slk_from or math.isclose(request_slk_from, row_slk_from)) and (row_slk_to < request_slk_to or math.isclose(row_slk_to, request_slk_to)):
+			# request contains row linestring entirely therefore return the entire linestring
+			output.append(row_linestring)
 		else:
 			part_a, part_bc = cut_linestring(
-				linestring,
-				slk_distance=slk_from - row_slk_from,
+				row_linestring,
+				slk_distance=request_slk_from - row_slk_from,
 				row_start_slk=row_slk_from,
 				row_end_slk=row_slk_to
 			)
@@ -200,8 +195,8 @@ def slice_network(road: str, slk_from: float, slk_to: float, offset: float, cway
 			if part_bc is not None:
 				part_b, part_c = cut_linestring(
 					part_bc,
-					slk_distance=request_slk.length,
-					row_start_slk=row_slk_from + max(0, slk_from - row_slk_from),
+					slk_distance=request_slk_to - request_slk_from,
+					row_start_slk=row_slk_from + max(0.0, request_slk_from - row_slk_from),
 					row_end_slk=row_slk_to
 				)
 			else:
