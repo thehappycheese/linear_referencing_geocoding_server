@@ -18,7 +18,7 @@ The response will be GeoJSON with the following format
   "geometry":{"type":"GeometryCollection", "geometries":[/*...*/]}
 }
 ``` 
-Note:Currently the response headers will be whatever the Flask default response headers are. This may be a problem if the client expects `'Content-Type: application/json'`. HTTP status code 400 will indicate invalid url parameters, code 500 will indicate unknown server error.
+**Note:** Currently the response headers will be whatever the Flask default response headers are. This may be a problem if the client expects `'Content-Type: application/json'`. HTTP status code 400 will indicate invalid url parameters, code 500 will indicate unknown server error.
 
 ## Installation
 
@@ -97,6 +97,13 @@ the parameters are
 |slk_to|Straight Line Kilometer to end the segment|`slk_to=2.3`|No|
 |cway|Filter for the carriageway. Must be some combination of the letters `L`, `R` and `S`|`cway=LS` or `cway=RS`|Yes|
 |offset|Number of meters to offset the resulting line segments. Large values may not produce any output. Negative values are to the left of the road (in slk direction) and positive values are to the right.|`offset=4` or `offset=-3.5`|Yes|
+
+## Usage in Excel
+The WebService formula can be used as follows in excel to extract information from this service:
+```excel
+=WEBSERVICE("http://localhost:8001/?road=H001,H012&slk_from=6.3,16.4&slk_to=7,17.35&offset=-5,5&cway=L,R")
+```
+Concatenation of other cell values can be used to build the request based on each row of the spreadsheet.
 
 ## Ideas for Improvement
 Show the 'usage' section above if the URL is called with no parameters
