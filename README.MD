@@ -121,5 +121,7 @@ That's probably pushing it a bit too complicated...
 the returned GeoJSON would be difficult to interpret due to the potentially many geometries returned per feature.
 But GeoJSON can encode a third coordinate per point... so maybe not that hard really.
 
+Allow slicing of a road "from the start" or "to the end" possibly by providing an empty value to the `slk_from` or `slk_to` parameters. Or maybe the string `"ALL"` should be used instead. This could potentially break the server if say the whole of Albany Hwy was requested at once.
+
 Fix content type headers
 
