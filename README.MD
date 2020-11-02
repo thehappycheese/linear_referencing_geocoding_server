@@ -9,15 +9,13 @@ and can be optionally offset.
 See the 'Usage' section below for more detail.
 
 The response will be GeoJSON with the following format
-```JSON
+```json5
 {
   "type":"Feature",
   "properties":null,
-  "geometries":[
-    {"type":"LineString",...},
-    {"type":"MultiLineString",...},
-    ...
-  ]
+  "geometry":{"type":"LineString", /*...*/}, //OR
+  "geometry":{"type":"MultiLineString", /*...*/}, // OR
+  "geometry":{"type":"GeometryCollection", "geometries":[/*...*/]}, // OR
 }
 ``` 
 At the moment the response is served without any fancy headers, just whatever the Flask default response headers are.
@@ -87,7 +85,9 @@ Note
  - that each parameter can accept a list of values separated by a comma or just a single value.
   In the example above two values are provided for each parameter. eg. road=H001,H012 (Albany Highway and Leach Highway)
  - All lists must be the same length.
- - Only 1 feature will be returned with multiple geometries.
+ - Only one GeoJSON "Feature" will be returned with either
+   - a single "LineString" or "MultiLineString" geometry or
+   - a "GeometryGroup"
  
 the parameters are
 |Name|Description|Example Value|Optional|
