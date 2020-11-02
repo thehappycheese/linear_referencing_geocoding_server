@@ -25,9 +25,10 @@ At the moment the response is served without any fancy headers, just whatever th
 ## Installation
 
 ### Python
-To run this server python 3.7+ is required.
+To run this server python 3.7+ is required, and the packages geopandas, flask and waitress must be installed.
+
 In a non-admin environment this can be slightly challenging to set up.
-There are two ways that may work
+There are two ways that might work, the conda option is recommended:
 
 1. Install python through the 'microsoft store' then install required packages using `pip install <package name>`
    (I have not tested this option) OR
