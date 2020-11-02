@@ -15,10 +15,10 @@ The response will be GeoJSON with the following format
   "properties":null,
   "geometry":{"type":"LineString", /*...*/}, //OR
   "geometry":{"type":"MultiLineString", /*...*/}, // OR
-  "geometry":{"type":"GeometryCollection", "geometries":[/*...*/]}, // OR
+  "geometry":{"type":"GeometryCollection", "geometries":[/*...*/]}
 }
 ``` 
-At the moment the response is served without any fancy headers, just whatever the Flask default response headers are.
+Note:Currently the response headers will be whatever the Flask default response headers are. This may be a problem if the client expects `'Content-Type: application/json'`. HTTP status code 400 will indicate invalid url parameters, code 500 will indicate unknown server error.
 
 ## Installation
 
@@ -112,4 +112,7 @@ Perhaps the surface width database could also be loaded and a surface "area" pro
 Maybe elevation data could be sliced and attached as well?
 That's probably pushing it a bit too complicated...
 the returned GeoJSON would be difficult to interpret due to the potentially many geometries returned per feature.
-But GeoJSON can encode a third coordinate per point... so maybe not that hard really. 
+But GeoJSON can encode a third coordinate per point... so maybe not that hard really.
+
+Fix content type headers
+
