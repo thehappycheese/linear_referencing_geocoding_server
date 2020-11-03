@@ -29,10 +29,12 @@ In a non-admin environment this can be slightly challenging to set up.
 There are two ways to set up python that might work:
 
 1. Install python through the 'microsoft store' then install required packages using `pip install <package name>`
-   (I have not tested this option) OR
-2. **Recommended:** Download and install Miniconda/Conda
-   - Conda is the preferred option rater than the microsoft store since packages installed via `conda install <package name>`
+   - This method does not typically work on windows because geopandas depends on a heap of binary (.dll / .exe) files which pip does not install properly. There is a lot of fiddling involved to get this to work on windows and its not worth anyone's time.
+2. **Recommended:** Download and install Miniconda
+   - Miniconda is the preferred option rater than the microsoft store since packages
+     installed via `conda install <package name>`
      are more likely to come with precompiled binaries and 'just work'
+   - Miniconda is the the exact same thing as 'Anaconda' but it does not come with a pile of pre-installed packages. To save disk space I recommend this option.
    - If the conda installer doesnt work,
      - Obtain a zip file download.
      - Extract the zip into `%USERPROFILE%\Miniconda\...` 
@@ -124,4 +126,4 @@ Allow slicing of a road "from the start" or "to the end" possibly by providing a
 
 Fix content type headers
 
-Lines are offset using the 'round' option. This produces a lot of excess geometry. Most of the time a miter is probably ok.
+Lines are offset using the 'round' option. This produces a lot of excess geometry. Most of the time a mitre is probably ok.
