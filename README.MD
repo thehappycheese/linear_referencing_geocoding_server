@@ -124,3 +124,4 @@ Allow slicing of a road "from the start" or "to the end" possibly by providing a
 
 Fix content type headers
 
+Lines are offset using the 'round' option. This produces a lot of excess geometry. Most of the time a miter is probably ok.
