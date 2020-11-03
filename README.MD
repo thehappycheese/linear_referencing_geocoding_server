@@ -23,7 +23,7 @@ The response will be GeoJSON with the following format
 ## Installation
 
 ### Python
-To run this server python 3.7+ is required, and the packages `geopandas`, `flask` and `waitress` must be installed.
+To run this server python 3.7+ is required, and the packages `geopandas` and `flask` must be installed.
 
 In a non-admin environment this can be slightly challenging to set up.
 There are two ways to set up python that might work:
@@ -50,12 +50,11 @@ There are two ways to set up python that might work:
    [some python version 3.7+ will be displayed]
    ```     
 
-4. Once your python environment is set up, install the three dependencies as follows
+4. Once your python environment is set up, install the two dependencies as follows
    ```bat
    C:\Users\e12345>conda activate
    (base) C:\Users\e12345>conda install geopandas
    (base) C:\Users\e12345>conda install flask
-   (base) C:\Users\e12345>conda install waitress
    ```
 
 ### Data Source Required:
