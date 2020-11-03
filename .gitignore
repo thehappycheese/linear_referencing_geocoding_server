@@ -1,7 +1,4 @@
-build/
-dist/
-pyinstaller/
-main.spec
 data.gdb
 __pycache__
 .idea
+.venv

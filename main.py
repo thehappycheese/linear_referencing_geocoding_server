@@ -138,8 +138,8 @@ def hello_world():
 		return result
 	except Slice_Network_Exception as slice_network_exception:
 		return Response(f"error: unable to slice network with the provided parameters: {slice_network_exception.message}", status=400)
-	except Exception as e:
-		print("Encountered unknown error:")
+	except Exception:
+		print("Encountered unknown error")
 		return Response(f"error: Unknown Error", status=500)
 		
 		
