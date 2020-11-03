@@ -3,7 +3,6 @@ from typing import List
 import json
 import geopandas as gpd
 
-from waitress import serve as waitress_serve
 from flask import Flask, request
 from shapely.geometry import Point
 from shapely.geometry.linestring import LineString
@@ -240,7 +239,7 @@ def slice_network(road: str, request_slk_from: float, request_slk_to: float, off
 
 
 if __name__ == '__main__':
-	# app.run(host='0.0.0.0', port=8001)
-	waitress_serve(app, host='0.0.0.0', port=8001)
+	app.run(host='0.0.0.0', port=8001)
+	# waitress_serve(app, host='0.0.0.0', port=8001)
 
 
