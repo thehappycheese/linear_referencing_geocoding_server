@@ -29,7 +29,7 @@ In a non-admin environment this can be slightly challenging to set up.
 There are two ways to set up python that might work:
 
 1. Install python through the 'microsoft store' then install required packages using `pip install <package name>`
-   - This method does not typically work on windows because geopandas depends on a heap of binary (.dll / .exe) files which pip does not install properly. There is a lot of fiddling involved to get this to work on windows and its not worth anyone's time.
+   - This method does not typically work on windows because geopandas depends on a heap of binary (.dll / .exe) files which pip does not install properly. There is a lot of fiddling involved to get this to work on windows and I don't think its worth anyone's time.
 2. **Recommended:** Download and install Miniconda
    - Miniconda is the preferred option rater than the microsoft store since packages
      installed via `conda install <package name>`
@@ -98,6 +98,7 @@ the parameters are
 |slk_to|Straight Line Kilometer to end the segment|`slk_to=2.3`|No|
 |cway|Filter for the carriageway. Must be some combination of the letters `L`, `R` and `S`|`cway=LS` or `cway=RS`|Yes|
 |offset|Number of meters to offset the resulting line segments. Large values may not produce any output. Negative values are to the left of the road (in slk direction) and positive values are to the right.|`offset=4` or `offset=-3.5`|Yes|
+|show|If the parameter show is present the results will be displayed in a map. The value of show is not important. Simply append `&show` to the end of the url|`show`|Yes|
 
 ## Usage in Excel
 The WebService formula can be used as follows in excel to extract information from this service:
@@ -108,8 +109,6 @@ Concatenation of other cell values can be used to build the request based on eac
 
 ## Ideas for Improvement
 Show the 'usage' section above if the URL is called with no parameters
-
-Add an optional `show=true` parameter which will display the resulting GeoJSON in a statically served page with an openlayers map for debugging purposes.
 
 Permit the injection of arbitrary "properties" into the returned feature by accepting arbitrary url parameters
 (maybe not. seems like it would generally be easier to add them afterwards than deal with this complexity and sending the data in both directions.)

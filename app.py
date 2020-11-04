@@ -3,7 +3,7 @@ from typing import List
 import json
 import geopandas as gpd
 
-from flask import Flask, request
+from flask import Flask, request, send_file
 from shapely.geometry import Point
 from shapely.geometry.linestring import LineString
 from shapely.geometry.multilinestring import MultiLineString
@@ -60,6 +60,9 @@ ERROR_SUGGEST_CORRECT_ADVANCED = "Try /?road=H001&slk_from=6.3&slk_to=7&offset=-
 
 @app.route('/')
 def hello_world():
+	if request.args.get("show", default=None) is not None:
+		return static_show()
+	
 	request_road = request.args.get("road", default=None)
 	try:
 		assert request_road is not None
@@ -137,9 +140,10 @@ def hello_world():
 		return result
 	except Slice_Network_Exception as slice_network_exception:
 		return Response(f"error: unable to slice network with the provided parameters: {slice_network_exception.message}", status=400)
-	except Exception:
+	except Exception as e:
 		print("Encountered unknown error")
-		return Response(f"error: Unknown Error", status=500)
+		print(e)
+		return Response(f"error: Unknown error. ", status=500)
 		
 		
 class Slice_Network_Exception(Exception):
@@ -221,22 +225,38 @@ def slice_network(road: str, request_slk_from: float, request_slk_to: float, off
 	if len(output) == 0:
 		return []
 	
-	if offset != 0:
-		output2 = []
+	if offset == 0:
+		output_after_offset = output
+	else:
+		output_after_offset = []
 		for line_string_to_offset in output:
+			if line_string_to_offset.is_empty:
+				continue
+				
 			offset_linestring_maybe_multi = line_string_to_offset.parallel_offset(
 				distance=abs(offset / EARTH_METERS_PER_DEGREE),
 				side=('left' if offset < 0 else 'right')
 			)
+			if offset_linestring_maybe_multi.is_empty:
+				continue
 			if isinstance(offset_linestring_maybe_multi, MultiLineString):
-				output2.extend(LineString(coords) for coords in offset_linestring_maybe_multi)
+				# convert any multilinestring back to linestring.
+				output_after_offset.extend(LineString(coords) for coords in offset_linestring_maybe_multi if len(coords) > 0)
 			else:
-				output2.append(offset_linestring_maybe_multi)
-		output = output2
-	if len(output) == 1:
-		return [json.dumps(output[0].__geo_interface__)]
-	return [json.dumps(MultiLineString(output).__geo_interface__)]
+				output_after_offset.append(offset_linestring_maybe_multi)
+		
+	if len(output_after_offset) == 1:
+		return [json.dumps(output_after_offset[0].__geo_interface__)]
+	elif len(output_after_offset) > 1:
+		return [json.dumps(MultiLineString(output_after_offset).__geo_interface__)]
+	else:
+		raise Slice_Network_Exception(f"Cutting network succeeded producing {len(output)} features, but offsetting the results failed. Try using a smaller offset, or perhaps shorter road segments will work?")
 
+
+
+def static_show():
+	return send_file('static_show/index.html')
+	
 
 if __name__ == '__main__':
 	app.run(host='0.0.0.0', port=8001)
