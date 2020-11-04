@@ -1,0 +1,118 @@
+<html>
+	<head>
+		<style>
+			form{
+				display: grid;
+				grid-template-rows: 2em 1fr;
+				grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr;
+			}
+			label, select{
+				display:block;
+				padding: 2px;
+				margin:1px;
+			}
+		</style>
+	</head>
+	<body>
+		<h1>Nicks Main Roads Network Geocoding server</h1>
+		<p>See how-to guide at <a href="https://github.com/thehappycheese/linear_referencing_geocoding_server">https://github.com/thehappycheese/linear_referencing_geocoding_server</a></p>
+		<form id="theform" action="" onsubmit="run_on_submit(event)">
+			<label>road (road number)</label>
+			<label>slk_from (km)</label>
+			<label>slk_to (km)</label>
+			<label>cway</label>
+			<label>offset (metres)</label>
+			<label>show (show on map)</label>
+			<input name="road" type=text required/>
+			<input name="slk_from" type="number" min="0" max="10000" step="0.001" required/>
+			<input name="slk_to" type="number" min="0" max="10000" step="0.001" required/>
+			<select name="cway">
+				<option value="">LRS</option>
+				<option value="L">L</option>
+				<option value="R">R</option>
+				<option value="S">S</option>
+				<option value="LS">LS</option>
+				<option value="RS">RS</option>
+				<option value="LR">LR</option>
+			</select>
+			<input name="offset" type="number" min="0" max="1000" step="0.001"/>
+			<input name="show" type="checkbox" min="0" max="1000" step="0.001"/>
+
+
+			<input name="road" type=text />
+			<input name="slk_from" type="number" min="0" max="10000" step="0.001"/>
+			<input name="slk_to" type="number" min="0" max="10000" step="0.001"/>
+			<select name="cway">
+				<option value="">LRS</option>
+				<option value="L">L</option>
+				<option value="R">R</option>
+				<option value="S">S</option>
+				<option value="LS">LS</option>
+				<option value="RS">RS</option>
+				<option value="LR">LR</option>
+			</select>
+			<input name="offset" type="number" min="0" max="1000" step="0.001"/>
+			<input name="show" type="checkbox" min="0" max="1000" step="0.001"/>
+
+			<input name="road" type=text />
+			<input name="slk_from" type="number" min="0" max="10000" step="0.001"/>
+			<input name="slk_to" type="number" min="0" max="10000" step="0.001"/>
+			<select name="cway">
+				<option value="">LRS</option>
+				<option value="L">L</option>
+				<option value="R">R</option>
+				<option value="S">S</option>
+				<option value="LS">LS</option>
+				<option value="RS">RS</option>
+				<option value="LR">LR</option>
+			</select>
+			<input name="offset" type="number" min="0" max="1000" step="0.001"/>
+			<input name="show" type="checkbox" min="0" max="1000" step="0.001"/>
+
+			<input name="road" type=text />
+			<input name="slk_from" type="number" min="0" max="10000" step="0.001"/>
+			<input name="slk_to" type="number" min="0" max="10000" step="0.001"/>
+			<select name="cway">
+				<option value="">LRS</option>
+				<option value="L">L</option>
+				<option value="R">R</option>
+				<option value="S">S</option>
+				<option value="LS">LS</option>
+				<option value="RS">RS</option>
+				<option value="LR">LR</option>
+			</select>
+			<input name="offset" type="number" min="0" max="1000" step="0.001"/>
+			<input name="show" type="checkbox" min="0" max="1000" step="0.001"/>
+		</form>
+		<input type="submit" form ="theform" />
+		preview url parameters: <code></code>
+		<script>
+			for (child of document.querySelector('form').children){
+				child.addEventListener("change", compute_url)
+			}
+			function compute_url(){
+				result = {}
+				const formData = new FormData(document.querySelector('form'))
+				len = 0
+				for (let key of formData.keys()) {
+					result[key] = formData.getAll(key)
+					if(key==="road")
+						len = result[key].filter(item=>item!=="").length
+				}
+				let filtered_result = []
+				for(let [key, vals] of Object.entries(result)){
+					if (vals.every(item=>item==""))
+						continue	
+					filtered_result.push(`${key}=${vals.slice(0,len).join(',')}`)
+				}
+				document.querySelector("code").innerHTML = "?"+filtered_result.join("&")
+				document.querySelector('form').action= "?"+filtered_result.join("&")
+				
+			}
+			function run_on_submit(e){
+				e.preventDefault()
+				open(document.querySelector('form').action)
+			}
+		</script>
+	</body>
+</html>

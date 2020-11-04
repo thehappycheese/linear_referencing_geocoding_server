@@ -60,8 +60,10 @@ ERROR_SUGGEST_CORRECT_ADVANCED = "Try /?road=H001&slk_from=6.3&slk_to=7&offset=-
 
 @app.route('/')
 def hello_world():
+	if not request.args:
+		return send_file('static_show/form.html')
 	if request.args.get("show", default=None) is not None:
-		return static_show()
+		return send_file('static_show/map.html')
 	
 	request_road = request.args.get("road", default=None)
 	try:
@@ -105,7 +107,8 @@ def hello_world():
 	
 	# obtain offset
 	request_offset = request.args.get("offset", default=None)
-	if request_offset is None:
+	if request_offset is None or request_offset == "":
+		request_offset = [0]*len(request_road)
 		request_offset = [0]*len(request_road)
 	else:
 		request_offset = request_offset.split(',')
@@ -114,18 +117,18 @@ def hello_world():
 	
 	# convert offsets to floats
 	try:
-		request_offset = [float(item) for item in request_offset]
+		request_offset = [float(item) if item!="" else 0 for item in request_offset]
 	except:
 		return Response("error: optional parameter 'offset' could not be converted to a number. " + ERROR_SUGGEST_CORRECT_ADVANCED, status=400)
 	
 	request_carriageway = request.args.get("cway", default=None)
-	if request_carriageway is None:
+	if request_carriageway is None or request_carriageway == "":
 		request_carriageway = ["LRS"] * len(request_road)
 	else:
 		request_carriageway = request_carriageway.split(',')
 	if len(request_carriageway) != len(request_road):
 		return Response("error: optional parameter 'cway' list must be the same length as the 'road' parameter. " + ERROR_SUGGEST_CORRECT_ADVANCED, status=400)
-	request_carriageway = [''.join(sorted(item.upper())) for item in request_carriageway]
+	request_carriageway = [''.join(sorted(item.upper())) if item!="" else "LRS" for item in request_carriageway]
 	
 	try:
 		slice_results = []
@@ -136,7 +139,7 @@ def hello_world():
 		elif len(slice_results) == 1:
 			result = f'{{"type": "Feature", "properties": null, "geometry": {slice_results[0]}}}'
 		else:
-			result = f'{{"type": "Feature", "properties": null, "geometry": {{"type":"GeometryCollection", "geometries":[{",".join(slice_results)}]}}'
+			result = f'{{"type": "Feature", "properties": null, "geometry": {{"type":"GeometryCollection", "geometries":[{",".join(slice_results)}]}}}}'
 		return result
 	except Slice_Network_Exception as slice_network_exception:
 		return Response(f"error: unable to slice network with the provided parameters: {slice_network_exception.message}", status=400)
@@ -252,11 +255,6 @@ def slice_network(road: str, request_slk_from: float, request_slk_to: float, off
 	else:
 		raise Slice_Network_Exception(f"Cutting network succeeded producing {len(output)} features, but offsetting the results failed. Try using a smaller offset, or perhaps shorter road segments will work?")
 
-
-
-def static_show():
-	return send_file('static_show/index.html')
-	
 
 if __name__ == '__main__':
 	app.run(host='0.0.0.0', port=8001)

@@ -108,7 +108,6 @@ The WebService formula can be used as follows in excel to extract information fr
 Concatenation of other cell values can be used to build the request based on each row of the spreadsheet.
 
 ## Ideas for Improvement
-Show the 'usage' section above if the URL is called with no parameters
 
 Permit the injection of arbitrary "properties" into the returned feature by accepting arbitrary url parameters
 (maybe not. seems like it would generally be easier to add them afterwards than deal with this complexity and sending the data in both directions.)
