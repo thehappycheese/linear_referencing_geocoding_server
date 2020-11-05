@@ -1,5 +1,6 @@
 <html>
 	<head>
+		<title>Nicks GeoJSON Geocoder</title>
 		<style>
 			form{
 				display: grid;
@@ -14,7 +15,7 @@
 		</style>
 	</head>
 	<body>
-		<h1>Nicks Main Roads Network Geocoding server</h1>
+		<h1>Nicks Main Roads GeoJSON Geocoding Server</h1>
 		<p>See how-to guide at <a href="https://github.com/thehappycheese/linear_referencing_geocoding_server">https://github.com/thehappycheese/linear_referencing_geocoding_server</a></p>
 		<form id="theform" action="" onsubmit="run_on_submit(event)">
 			<label>road (road number)</label>
@@ -35,7 +36,7 @@
 				<option value="RS">RS</option>
 				<option value="LR">LR</option>
 			</select>
-			<input name="offset" type="number" min="0" max="1000" step="0.001"/>
+			<input name="offset" type="number" min="-1000" max="1000" step="0.001"/>
 			<input name="show" type="checkbox" min="0" max="1000" step="0.001"/>
 
 
@@ -51,8 +52,8 @@
 				<option value="RS">RS</option>
 				<option value="LR">LR</option>
 			</select>
-			<input name="offset" type="number" min="0" max="1000" step="0.001"/>
-			<input name="show" type="checkbox" min="0" max="1000" step="0.001"/>
+			<input name="offset" type="number" min="-1000" max="1000" step="0.001"/>
+			<div></div>
 
 			<input name="road" type=text />
 			<input name="slk_from" type="number" min="0" max="10000" step="0.001"/>
@@ -66,8 +67,8 @@
 				<option value="RS">RS</option>
 				<option value="LR">LR</option>
 			</select>
-			<input name="offset" type="number" min="0" max="1000" step="0.001"/>
-			<input name="show" type="checkbox" min="0" max="1000" step="0.001"/>
+			<input name="offset" type="number" min="-1000" max="1000" step="0.001"/>
+			<div></div>
 
 			<input name="road" type=text />
 			<input name="slk_from" type="number" min="0" max="10000" step="0.001"/>
@@ -81,8 +82,8 @@
 				<option value="RS">RS</option>
 				<option value="LR">LR</option>
 			</select>
-			<input name="offset" type="number" min="0" max="1000" step="0.001"/>
-			<input name="show" type="checkbox" min="0" max="1000" step="0.001"/>
+			<input name="offset" type="number" min="-1000" max="1000" step="0.001"/>
+			<div></div>
 		</form>
 		<input type="submit" form ="theform" />
 		preview url parameters: <code></code>

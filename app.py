@@ -3,14 +3,12 @@ from typing import List
 import json
 import geopandas as gpd
 
-from flask import Flask, request, send_file
+from flask import Flask, request, send_file, Response
 from shapely.geometry import Point
 from shapely.geometry.linestring import LineString
 from shapely.geometry.multilinestring import MultiLineString
 
 app = Flask(__name__)
-
-from flask import Response
 
 EARTH_RADIUS_METERS 	= 6.3781e6
 EARTH_METERS_PER_RADIAN	= EARTH_RADIUS_METERS
@@ -140,7 +138,7 @@ def hello_world():
 			result = f'{{"type": "Feature", "properties": null, "geometry": {slice_results[0]}}}'
 		else:
 			result = f'{{"type": "Feature", "properties": null, "geometry": {{"type":"GeometryCollection", "geometries":[{",".join(slice_results)}]}}}}'
-		return result
+		return Response(result,mimetype="application/json")
 	except Slice_Network_Exception as slice_network_exception:
 		return Response(f"error: unable to slice network with the provided parameters: {slice_network_exception.message}", status=400)
 	except Exception as e:

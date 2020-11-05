@@ -114,14 +114,8 @@ Permit the injection of arbitrary "properties" into the returned feature by acce
 
 Optionally populate the feature "properties" with a summary of segment length or any other useful data (the query that generated it perhaps).
 Perhaps the surface width database could also be loaded and a surface "area" property could be returned.
-
-Maybe elevation data could be sliced and attached as well?
-That's probably pushing it a bit too complicated...
-the returned GeoJSON would be difficult to interpret due to the potentially many geometries returned per feature.
-But GeoJSON can encode a third coordinate per point... so maybe not that hard really.
+Maybe elevation data could be sliced and attached as well? That's probably pushing it a bit too complicated...
 
 Allow slicing of a road "from the start" or "to the end" possibly by providing an empty value to the `slk_from` or `slk_to` parameters. Or maybe the string `"ALL"` should be used instead. This could potentially break the server if say the whole of Albany Hwy was requested at once.
 
-Fix content type headers
-
-Lines are offset using the 'round' option. This produces a lot of excess geometry. Most of the time a mitre is probably ok.
+LineStrings are offset using shapely's default 'round' option for the `.parallelOffset()` function. This produces a lot of extra coordinates in the output to smooth the corners. Most of the time a mitre is probably ok but in some cases will be much worse. Need to do some experiments to find out.
