@@ -138,7 +138,7 @@ def hello_world():
 			result = f'{{"type": "Feature", "properties": null, "geometry": {slice_results[0]}}}'
 		else:
 			result = f'{{"type": "Feature", "properties": null, "geometry": {{"type":"GeometryCollection", "geometries":[{",".join(slice_results)}]}}}}'
-		return Response(result,mimetype="application/json")
+		return Response(result, mimetype="application/json")
 	except Slice_Network_Exception as slice_network_exception:
 		return Response(f"error: unable to slice network with the provided parameters: {slice_network_exception.message}", status=400)
 	except Exception as e:
