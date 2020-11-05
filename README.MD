@@ -15,10 +15,12 @@ The response will be GeoJSON with the following format
   "properties":null,
   "geometry":{"type":"LineString", /*...*/}, //OR
   "geometry":{"type":"MultiLineString", /*...*/}, // OR
-  "geometry":{"type":"GeometryCollection", "geometries":[/*...*/]}
+  "geometry":{"type":"GeometryCollection", "geometries":[/*...LineStrings or MultiLineStrings...*/]}
 }
 ``` 
-**Note:** Currently the response headers will be whatever the Flask default response headers are. This may be a problem if the client expects `'Content-Type: application/json'`. HTTP status code 400 will indicate invalid url parameters, code 500 will indicate unknown server error.
+- The response mime-type will be "application/json".
+- HTTP status code 400 will indicate invalid url parameters.
+- HTTP status code 500 will indicate unknown server error.
 
 ## Installation
 
