@@ -41,16 +41,25 @@
 
 				let featureProjection = view.getProjection()
 				let dataProjection = new ol.format.GeoJSON().readProjection({"crs":{"type":"EPSG","properties":{"code":4326}}})
+				let read_features = new ol.format.GeoJSON({featureProjection, dataProjection}).readFeatures(GEOJSON);
 				var layer_geojson = new ol.layer.Vector({
 					source: new ol.source.Vector({
-						features: new ol.format.GeoJSON({featureProjection, dataProjection}).readFeatures(GEOJSON),
+						features: read_features,
 					}),
-					style: new ol.style.Style({
-						stroke: new ol.style.Stroke({
-							color: '#319FD3',
-							width: 3,
-						})
-					}),
+					style:(feature)=>{
+                        console.log(feature.getGeometry().getType())
+                        return new ol.style.Style({
+
+                            stroke: new ol.style.Stroke({
+                                color: '#319FD3',
+                                width: 4,
+                            }),
+                            image: new ol.style.Circle({
+                                  radius: 8,
+                                  stroke: new ol.style.Stroke({color: '#319FD3', width:4}),
+                                }),
+                        })
+                    },
 				});
 				
 				layer_osm = new ol.layer.Tile({

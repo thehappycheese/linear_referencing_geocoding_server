@@ -7,6 +7,11 @@ from flask import Flask, request, send_file, Response
 from shapely.geometry import Point
 from shapely.geometry.linestring import LineString
 from shapely.geometry.multilinestring import MultiLineString
+import os
+import sys
+
+# This next line would disable the warning when the server is started:
+# os.environ["FLASK_ENV"] = "development"
 
 app = Flask(__name__)
 
@@ -107,7 +112,6 @@ def hello_world():
 	request_offset = request.args.get("offset", default=None)
 	if request_offset is None or request_offset == "":
 		request_offset = [0]*len(request_road)
-		request_offset = [0]*len(request_road)
 	else:
 		request_offset = request_offset.split(',')
 	if len(request_offset) != len(request_road):
@@ -115,7 +119,7 @@ def hello_world():
 	
 	# convert offsets to floats
 	try:
-		request_offset = [float(item) if item!="" else 0 for item in request_offset]
+		request_offset = [float(item) if item != "" else 0 for item in request_offset]
 	except:
 		return Response("error: optional parameter 'offset' could not be converted to a number. " + ERROR_SUGGEST_CORRECT_ADVANCED, status=400)
 	
@@ -126,22 +130,29 @@ def hello_world():
 		request_carriageway = request_carriageway.split(',')
 	if len(request_carriageway) != len(request_road):
 		return Response("error: optional parameter 'cway' list must be the same length as the 'road' parameter. " + ERROR_SUGGEST_CORRECT_ADVANCED, status=400)
-	request_carriageway = [''.join(sorted(item.upper())) if item!="" else "LRS" for item in request_carriageway]
+	request_carriageway = [''.join(sorted(item.upper())) if item != "" else "LRS" for item in request_carriageway]
 	
 	try:
 		slice_results = []
 		for road, slk_from, slk_to, offset, cway in zip(request_road, request_slk_from, request_slk_to, request_offset, request_carriageway):
-			slice_results.extend(slice_network(road, slk_from, slk_to, offset, cway))
+			if math.isclose(slk_from, slk_to):
+				ff = return_points_on_network(road, slk_from, offset, cway)
+				slice_results.extend(ff)
+			else:
+				slice_results.extend(cut_segments_from_network(road, slk_from, slk_to, offset, cway))
 		if len(slice_results) == 0:
 			raise Slice_Network_Exception("Valid user parameters produced no resulting geometry. Are the SLK bounds within the extent of the road?")
 		elif len(slice_results) == 1:
 			result = f'{{"type": "Feature", "properties": null, "geometry": {slice_results[0]}}}'
 		else:
 			result = f'{{"type": "Feature", "properties": null, "geometry": {{"type":"GeometryCollection", "geometries":[{",".join(slice_results)}]}}}}'
-		return Response(result, mimetype="application/json")
+		return Response(result)  # , mimetype="application/json")
 	except Slice_Network_Exception as slice_network_exception:
 		return Response(f"error: unable to slice network with the provided parameters: {slice_network_exception.message}", status=400)
 	except Exception as e:
+		exc_type, exc_obj, exc_tb = sys.exc_info()
+		fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+		print(exc_type, fname, exc_tb.tb_lineno)
 		print("Encountered unknown error")
 		print(e)
 		return Response(f"error: Unknown error. ", status=500)
@@ -153,16 +164,95 @@ class Slice_Network_Exception(Exception):
 		self.message = message
 
 
-def slice_network(road: str, request_slk_from: float, request_slk_to: float, offset: float, cway: str) -> List[str]:
+def return_points_on_network(road: str, request_slk: float, offset: float, cway: str) -> List[str]:
+	road_segment_rows = gdf_all_roads[
+		(gdf_all_roads["ROAD"] == road.strip().upper()) & (gdf_all_roads["START_SLK"] <= request_slk) & (gdf_all_roads["END_SLK"] >= request_slk)
+	]
 	
-	if request_slk_to <= request_slk_from:
+	if cway == "LS":
+		road_segment_rows = road_segment_rows[(road_segment_rows["CWY"] == "Left") | (road_segment_rows["CWY"] == "Single")]
+	elif cway == "RS":
+		road_segment_rows = road_segment_rows[(road_segment_rows["CWY"] == "Right") | (road_segment_rows["CWY"] == "Single")]
+	elif cway == "LR":
+		road_segment_rows = road_segment_rows[(road_segment_rows["CWY"] == "Right") | (road_segment_rows["CWY"] == "Left")]
+	elif cway == "R":
+		road_segment_rows = road_segment_rows[road_segment_rows["CWY"] == "Right"]
+	elif cway == "L":
+		road_segment_rows = road_segment_rows[road_segment_rows["CWY"] == "Left"]
+	elif cway == "S":
+		road_segment_rows = road_segment_rows[road_segment_rows["CWY"] == "Single"]
+	elif cway == "LRS":
+		pass
+	else:
+		raise Slice_Network_Exception(f"Invalid carriageway parameter: {cway}. Must be any combination of the three letters 'L', 'R' and 'S'. eg &cwy=LR or &cwy=RL or &cwy=S. omit the parameter to query all.")
+	
+	output: List[LineString] = []
+	
+	for index, road_segment_row in road_segment_rows.iterrows():
+		row_slk_from = float(road_segment_row["START_SLK"])
+		row_slk_to = float(road_segment_row["END_SLK"])
+		
+		multilinestring = road_segment_row.geometry
+		if multilinestring.geom_type != "MultiLineString":
+			raise Exception("Encountered unexpected geometry in the road network geometry data. The shape of a row was not a MultiLineString as expected.")
+		if len(multilinestring.geoms) != 1:
+			raise Exception("Encountered unexpected geometry in the road network geometry data. The row's geometry was a MultiLineString (as expected), but it did not contain exactly one LineString as expected.")
+		
+		row_linestring: LineString = multilinestring.geoms[0]
+		if row_linestring.is_empty:
+			return []
+		
+		if offset == 0:
+			row_linestring_after_offset = row_linestring
+		else:
+			row_linestring_after_offset = []
+			offset_linestring_maybe_multi = row_linestring.parallel_offset(
+				distance=abs(offset / EARTH_METERS_PER_DEGREE),
+				side=('left' if offset < 0 else 'right')
+			)
+			if offset_linestring_maybe_multi.is_empty:
+				# TODO: No result. Do not emit error?
+				return []
+			row_linestring_after_offset = offset_linestring_maybe_multi
+		
+		point_result = row_linestring.interpolate(
+			(request_slk-row_slk_from)/(row_slk_to-row_slk_from),  # Fraction of line length
+			normalized=True
+		)
+		
+		if point_result.is_empty:
+			# TODO: No result. Do not emit error?
+			return []
+		
+		# TODO: error will be introduced by offset due to the additional line length of the miters. Should not be noticeable most of the time?
+		#  The only way to fix this is to determine the instantaneous direction of the linestring, and perform the offset. Add to readme.
+		
+		point_result = row_linestring_after_offset.interpolate(row_linestring_after_offset.project(point_result))
+		
+		if point_result.is_empty:
+			# TODO: No result. Do not emit error?
+			return []
+		
+		output.append(point_result)
+	if len(output) == 0:
+		return []
+	if len(output) > 1:
+		return [f'{{"type":"MultiPoint","coordinates":[{",".join(json.dumps([item.coords[0][0],item.coords[0][1]]) for item in output)}]}}']
+	else:
+		return [f'{{"type":"Point","coordinates":{json.dumps([output[0].coords[0][0], output[0].coords[0][1]])}}}']
+
+
+def cut_segments_from_network(road: str, request_slk_from: float, request_slk_to: float, offset: float, cway: str) -> List[str]:
+	
+	if request_slk_to < request_slk_from:
+		# The user should not see this error, the code above is supposed to silently swap the SLKs if they are the wrong way around.
 		raise Slice_Network_Exception("Invalid slk interval; either reversed or zero length")
 	
 	if math.isclose(request_slk_from, request_slk_to):
 		raise Slice_Network_Exception("Infinitesimal length slk interval provided.")
 	
 	m = gdf_all_roads[
-		(gdf_all_roads["ROAD"] == road) & (gdf_all_roads["START_SLK"] <= request_slk_to) & (gdf_all_roads["END_SLK"] >= request_slk_from)
+		(gdf_all_roads["ROAD"] == road.strip().upper()) & (gdf_all_roads["START_SLK"] <= request_slk_to) & (gdf_all_roads["END_SLK"] >= request_slk_from)
 	]
 	
 	if cway == "LS":
@@ -200,7 +290,6 @@ def slice_network(road: str, request_slk_from: float, request_slk_to: float, off
 			# request contains row linestring entirely therefore return the entire linestring
 			output.append(row_linestring)
 		else:
-			# TODO: this part of the code is still producing errors at the ends of the linestrings:
 			part_a, part_bc = cut_linestring(
 				row_linestring,
 				slk_at_which_to_cut=request_slk_from,

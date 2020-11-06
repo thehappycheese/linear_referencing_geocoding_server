@@ -79,9 +79,9 @@ gdf_all_roads: gpd.GeoDataFrame = gpd.read_file(
 ## Usage
 Start the server
 ```bat
-(base) C:\Users\e12345\some\path\to\folder\containing\main_py>python main.py
+(base) C:\Users\e12345\some\path\to\folder\containing\main_py>python app.py
 ```
-Then go into your browser and paste the following URL into the locaiton bar to confirm everything is working
+Then go into your browser and paste the following URL into the location bar to confirm everything is working
 > http://localhost:8001/?road=H001,H012&slk_from=6.3,16.4&slk_to=7,17.35&offset=-5,5&cway=L,R
 
 Note
@@ -109,7 +109,31 @@ The WebService formula can be used as follows in excel to extract information fr
 ```
 Concatenation of other cell values can be used to build the request based on each row of the spreadsheet.
 
+## Security and usage in a cloud environment
+
+As-is this Flask application can be executed locally using the command `>python app.py`. This will use Flask's built in server which is not intended for deployment to the wide web. This will be fine for usage on a local machien over the local network.
+> Note that flask may emit a warning on startup something like the following:
+>
+> `WARNING: This is a development server. Do not use it in a production deployment.
+Use a production WSGI server instead`
+>
+> This is fine if you are running the server on your local machine
+
+
+As long as the required packages (flask and geopandas) are present in the target cloud environment this app should work as-is in any 'WSGI' cloud service (Not tested yet). Unfortunaly it turns out to be fairly complex to get geopandas installed if it is not already pre-configured in the cloud service providers environment...
+
+Obviously no authentication is implemented in this app not sure how that would work. Maybe just a case of adding some flask middleware? Something like this:? https://www.osohq.com/post/oso-azure
+
+Any kind of authorisation layer whatsoever will prevent the excel `=WEBSERVICE()` function from working. Probably that would mean that PowerBI or some other software which can handel (and hopefully automate) this authentication would be needed to join the GeoJSON results with your data.
+
 ## Ideas for Improvement
+
+Permit the upload of a CSV file with some preset columns which will download a single `{"type":"FeatureCollection",... }` .geojson file as a result. Possibly geopandas may be able to emit a shapefile or other common GIS exchange format.
+
+Permit queries where `slk_from` is the same as `slk_to`. Currently this will cause an error, but it should
+simply return a point geometry result instead of a linestring.
+Returning a mixture of points and lines may cause downstream problems with
+conversion to ArcMap feature classes since ArcMap requires homogeneous feature types in each class.
 
 Permit the injection of arbitrary "properties" into the returned feature by accepting arbitrary url parameters
 (maybe not. seems like it would generally be easier to add them afterwards than deal with this complexity and sending the data in both directions.)
