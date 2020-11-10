@@ -133,16 +133,19 @@ Any kind of authorisation layer whatsoever will prevent the excel `=WEBSERVICE()
 
 ## Ideas for Improvement
 
-Permit the upload of a CSV file with some preset columns which will download a single `{"type":"FeatureCollection",... }` .geojson file as a result. Possibly geopandas may be able to emit a shapefile or other common GIS exchange format.
+Permit the upload of a CSV file with some preset columns which will download a single `{"type":"FeatureCollection",... }` .geojson file as a result.
+ - Possibly geopandas may be able to emit a shapefile or other common GIS exchange format.
 
 Permit the injection of arbitrary "properties" into the returned feature by accepting arbitrary url parameters
-(maybe not. seems like it would generally be easier to add them afterwards than deal with this complexity and sending the data in both directions.)
+ - Maybe not a good idea. seems like it would generally be easier to add them afterwards than deal with this complexity and sending the data in both directions.
 
-Optionally populate the feature "properties" with a summary of segment length or any other useful data (the query that generated it perhaps).
-Perhaps the surface width database could also be loaded and a surface "area" property could be returned.
-Maybe elevation data could be sliced and attached as well? That's probably pushing it a bit too complicated...
+Optionally populate the feature "properties" with a summary of segment length or any other useful data
+ - the query string that generated it perhaps?
+ - Perhaps the surface width database could also be loaded and a surface "area" property could be returned.
+ - Maybe elevation data could be sliced and attached as well? That's probably pushing it a bit too complicated...
 
 Optionally return a feature for each subquery rather than a single feature with many geometries.
+ - I cant think of a use-case for this It would possibly give more flexibility when applying line styles in OpenLayers or Leaflet 
 
 Allow slicing of a road "from the start" or "to the end" possibly by providing an empty value to the `slk_from` or `slk_to` parameters. Or maybe the string `"ALL"` should be used instead. This could potentially break the server if say the whole of Albany Hwy was requested at once.
 
