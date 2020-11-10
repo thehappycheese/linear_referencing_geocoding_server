@@ -31,28 +31,29 @@ In a non-admin environment this can be slightly challenging to set up.
 There are two ways to set up python that might work:
 
 1. Install python through the 'microsoft store' then install required packages using `pip install <package name>`
-   - This method does not typically work on windows because geopandas depends on a heap of binary (.dll / .exe) files which pip does not install properly. There is a lot of fiddling involved to get this to work on windows and I don't think its worth anyone's time.
+   - The `pip install` method does not typically work on windows because geopandas depends on a heap of binary (.dll / .exe) files which pip does not install properly. There is a lot of fiddling involved to get this to work on windows and I don't think its worth anyone's time.
 2. **Recommended:** Download and install Miniconda
-   - Miniconda is the preferred option rater than the microsoft store since packages
-     installed via `conda install <package name>`
-     are more likely to come with precompiled binaries and 'just work'
-   - Miniconda is the the exact same thing as 'Anaconda' but it does not come with a pile of pre-installed packages. To save disk space I recommend this option.
+   - Miniconda is the preferred option because it will install
+     precompiled binaries and 'just work'
+   - Miniconda is the same as 'Anaconda' but without the hundreds of pre-installed packages.
+     For a quicker download an install I recommend this option.
    - If the conda installer doesnt work,
      - Obtain a zip file download.
      - Extract the zip into `%USERPROFILE%\Miniconda\...` 
        (ie `C:\Users\e12345\Miniconda\`)
-     - search for the windows "Edit environment variables for your account" from the start menu.
+     - Search for the windows "Edit environment variables for your account" from the start menu.
      - Edit the PATH variable and append the following three entries:
        - `%USERPROFILE%\Miniconda\`
        - `%USERPROFILE%\Miniconda\Library\bin`
        - `%USERPROFILE%\Miniconda\Scripts`
-3. once you have installed conda, you may need to restart your machine.
-   To verify it all worked, open command prompt and try
+3. Once conda is installed, you may need to restart your machine.
+   Open command prompt or powershell and try the following:
    ```bat
    C:\Users\e12345>conda activate
    (base) C:\Users\e12345>python --version
    [some python version 3.7+ will be displayed]
-   ```     
+   ```
+   Depending how it was installed conda may also prompt you to type `conda init` which will configure powershell to always activate conda on startup.
 
 4. Once your python environment is set up, install the two dependencies as follows
    ```bat
@@ -85,12 +86,16 @@ Then go into your browser and paste the following URL into the location bar to c
 > http://localhost:8001/?road=H001,H012&slk_from=6.3,16.4&slk_to=7,17.35&offset=-5,5&cway=L,R
 
 Note
- - that each parameter can accept a list of values separated by a comma or just a single value.
-  In the example above two values are provided for each parameter. eg. road=H001,H012 (Albany Highway and Leach Highway)
- - All lists must be the same length.
- - Only one GeoJSON "Feature" will be returned with either
-   - a single "LineString" or "MultiLineString" geometry or
-   - a "GeometryGroup"
+ - Each parameter can accept a list of values separated by a comma or just a single value.
+   - In the example above two values are provided for each parameter. eg. road=H001,H012 (Albany Highway and Leach Highway).
+   - The **n**<sup>th</sup> item in the `road=` list corresponds with the **n**<sup>th</sup> item in the `slk_from=` list and so on.
+   - All lists must be the same length.
+ - Only one GeoJSON "Feature" will be returned per request. The Feature `"geometry"` may be any valid GeoJSON geometry object including: 
+   - a "Point"
+   - a "MultiPoint"
+   - a "LineString"
+   - a "MultiLineString" or
+   - a "GeometryCollection"
  
 the parameters are
 |Name|Description|Example Value|Optional|
