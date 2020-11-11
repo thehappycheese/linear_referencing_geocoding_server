@@ -13,10 +13,17 @@ The original LineString geometry will be cut at the specified endpoints, and pro
 Points will be returned instead of lines if a zero length SLK interval is requested.
 
 ## Yes but Why?
-This webservice can be used in Excel or PowerBI to add a new text column of consisting of GeoJSON features based on each row of the original data.
+It is meant to be used in Excel or PowerBI to add a new text column of consisting of GeoJSON features based on each row of the original data.
 (See the 'Useage' section below). This can then be used to visualise the data against a map.
 
-What tool can visualised that kind of data?
+## Yes but don't we already have tools for that?
+
+Yes, but you are going to need an arcmap licence and know how to use it very well.
+To slice linestring intervals at arbitrary SLKs is hard to do (or maybe requires additional tools not available in the basic licence).
+
+This way you can do it in Excel or PowerBI or even a web browser. It can be used from a variety of technologies to slice the road network and update dashboards etc without any access to ESRI tools.
+
+## What tool can visualise that kind of data anyway?
 See my related PowerBI custom visual project  https://github.com/thehappycheese/powerbi-visual-geojson-map-1
 
 ## Response Format
@@ -178,3 +185,5 @@ Optionally return a feature for each subquery rather than a single feature with 
 Allow slicing of a road "from the start" or "to the end" possibly by providing an empty value to the `slk_from` or `slk_to` parameters. Or maybe the string `"ALL"` should be used instead. This could potentially break the server if say the whole of Albany Hwy was requested at once.
 
 LineStrings are offset using shapely's default 'round' option for the `.parallelOffset()` function. This produces a lot of extra coordinates in the output to smooth the corners. Most of the time a mitre is probably ok but in some cases will be much worse. Need to do some experiments to find out.
+
+Optionally return a complete GeoJSON document or EsriJSON document, or create a new project which can deal with bulk requests
