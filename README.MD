@@ -1,13 +1,25 @@
 # Linear Referencing Geocoding Server
 
 ## Purpose
-Runs a REST server on localhost:8001 which will slice linear referenced
-portions of the Main Roads Western Australia road network based on SLK (Straight Line Kilometer).
+Runs a REST server on localhost:8001 which will slice
+portions of the Main Roads Western Australia road network based on pair of SLKs
+(Straight Line Kilometer) and return a GeoJSON feature.
 
 Sliced sections can be optionally filtered by carriageway,
 and can be optionally offset.
 See the 'Usage' section below for more detail.
 
+The original LineString geometry will be cut at the specified endpoints, and properly truncated to reflect the requested SLK interval.
+Points will be returned instead of lines if a zero length SLK interval is requested.
+
+## Yes but Why?
+This webservice can be used in Excel or PowerBI to add a new text column of consisting of GeoJSON features based on each row of the original data.
+(See the 'Useage' section below). This can then be used to visualise the data against a map.
+
+What tool can visualised that kind of data?
+See my related PowerBI custom visual project  https://github.com/thehappycheese/powerbi-visual-geojson-map-1
+
+## Response Format
 The response will be GeoJSON with the following format
 ```json5
 {
@@ -78,10 +90,20 @@ gdf_all_roads: gpd.GeoDataFrame = gpd.read_file(
 ```
 
 ## Usage
-Start the server
+
+### Starting the server
+Open a terminal and change the working directory to the same folder containing `app.py`.
+Run the command
 ```bat
-(base) C:\Users\e12345\some\path\to\folder\containing\main_py>python app.py
+>python app.py
 ```
+> Note that flask may emit a warning on startup something like the following:
+>
+> `WARNING: This is a development server. Do not use it in a production deployment.
+Use a production WSGI server instead`
+>
+> This is fine if you are running the server on your local machine (See 'local machine vs cloud' section below )
+
 Then go into your browser and paste the following URL into the location bar to confirm everything is working
 > http://localhost:8001/?road=H001,H012&slk_from=6.3,16.4&slk_to=7,17.35&offset=-5,5&cway=L,R
 
@@ -107,29 +129,35 @@ the parameters are
 |offset|Number of meters to offset the resulting line segments. Large values may not produce any output. Negative values are to the left of the road (in slk direction) and positive values are to the right.|`offset=4` or `offset=-3.5`|Yes|
 |show|If the parameter show is present the results will be displayed in a map. The value of show is not important. Simply append `&show` to the end of the url|`show`|Yes|
 
-## Usage in Excel
+### Usage in Excel
 The WebService formula can be used as follows in excel to extract information from this service:
 ```excel
 =WEBSERVICE("http://localhost:8001/?road=H001,H012&slk_from=6.3,16.4&slk_to=7,17.35&offset=-5,5&cway=L,R")
 ```
 Concatenation of other cell values can be used to build the request based on each row of the spreadsheet.
 
-## Security and usage in a cloud environment
 
-As-is this Flask application can be executed locally using the command `>python app.py`. This will use Flask's built in server which is not intended for deployment to the wide web. This will be fine for usage on a local machien over the local network.
-> Note that flask may emit a warning on startup something like the following:
->
-> `WARNING: This is a development server. Do not use it in a production deployment.
-Use a production WSGI server instead`
->
-> This is fine if you are running the server on your local machine
+### local machine vs cloud
+This repo contains a Flask 'app'. To make it a 'webservice' the 'app' must be paired with a suitable 'server'.
+
+While this app was intended to be run in the cloud, it can be executed on a local machine as described above.
+Running it locally will use Flask's built in test server which is not intended for deployment to the wide web
+(and therefore the warning message described above may appear)
+However when it is deployed to the cloud the cloud provider will run a suitable
+[WSGI](https://en.wikipedia.org/wiki/Web_Server_Gateway_Interface)
+'server' which will safely run this 'app' an pass requests and responses. 
 
 
-As long as the required packages (flask and geopandas) are present in the target cloud environment this app should work as-is in any 'WSGI' cloud service (Not tested yet). Unfortunaly it turns out to be fairly complex to get geopandas installed if it is not already pre-configured in the cloud service providers environment...
+This app should work as-is in any WSGI cloud service (not tested) provided that 
+the required dependencies (flask and geopandas) are installed.
 
-Obviously no authentication is implemented in this app not sure how that would work. Maybe just a case of adding some flask middleware? Something like this:? https://www.osohq.com/post/oso-azure
+Obviously no authentication is implemented in this app. It may be that some
+flask middleware can do the job for the specific cloud service?
 
-Any kind of authorisation layer whatsoever will prevent the excel `=WEBSERVICE()` function from working. Probably that would mean that PowerBI or some other software which can handel (and hopefully automate) this authentication would be needed to join the GeoJSON results with your data.
+**Note:** Any kind of authentication will prevent the excel `=WEBSERVICE()` function from working.
+Excel is only able to anonymously access webservices and there is no option or workaround to change this.
+PowerBI or some other software which can handle (and hopefully automate) this authentication step
+would be needed to join the GeoJSON results with your data.
 
 ## Ideas for Improvement
 
