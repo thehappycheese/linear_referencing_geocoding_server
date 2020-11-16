@@ -31,11 +31,19 @@ The response will be GeoJSON with the following format
 {
   "type":"Feature",
   "properties":null,
-  "geometry":{"type":"LineString", /*...*/}, //OR
-  "geometry":{"type":"MultiLineString", /*...*/}, // OR
-  "geometry":{"type":"GeometryCollection", "geometries":[/*...LineStrings or MultiLineStrings...*/]}
+  "geometry":{/*...*/}
 }
 ``` 
+
+The `"geometry"` will be any of the following:
+- `{"type":"LineString", ...}`
+- `{"type":"MultiLineString", ...}`
+- `{"type":"Point", ...}`
+- `{"type":"MultiPoint", ...}`
+- `{"type":"GeometryCollection", "geometries":[/*... any combinaiton of the above...*/]}`
+Currently there is no way to limit results to a single type.
+
+Also
 - The response mime-type will be "application/json".
 - HTTP status code 400 will indicate invalid url parameters.
 - HTTP status code 500 will indicate unknown server error.
@@ -186,3 +194,5 @@ Allow slicing of a road "from the start" or "to the end" possibly by providing a
 LineStrings are offset using shapely's default 'round' option for the `.parallelOffset()` function. This produces a lot of extra coordinates in the output to smooth the corners. Most of the time a mitre is probably ok but in some cases will be much worse. Need to do some experiments to find out.
 
 Optionally return a complete GeoJSON document or EsriJSON document, or create a new project which can deal with bulk requests
+
+Optionally limit results to a single geometry `"type"`
