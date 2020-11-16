@@ -41,7 +41,7 @@ The `"geometry"` will be any of the following:
 - `{"type":"Point", ...}`
 - `{"type":"MultiPoint", ...}`
 - `{"type":"GeometryCollection", "geometries":[/*... any combinaiton of the above...*/]}`
-Currently there is no way to limit results to a single type.
+
 
 Also
 - The response mime-type will be "application/json".
