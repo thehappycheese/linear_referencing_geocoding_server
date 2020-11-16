@@ -142,7 +142,7 @@ the parameters are
 |cway|Filter for the carriageway. Must be some combination of the letters `L`, `R` and `S`|`cway=LS` or `cway=RS`|Yes|
 |offset|Number of meters to offset the resulting line segments. Large values may not produce any output. Negative values are to the left of the road (in slk direction) and positive values are to the right.|`offset=4` or `offset=-3.5`|Yes|
 |show|If the parameter show is present the results will be displayed in a web browser map. The value of show is not important. Simply append `&show` to the end of the url. Don't use this option from Excel or PowerBI etc it is meant for testing in a web browser.|`show`|Yes|
-|`none`|If no parameters are provided a webpage / form will be served|-|-|
+|`none`|If no parameters are provided a webpage / form will be served which describes this service and provides a simple User Interface for building a query.|-|-|
 
 ### Usage in Excel
 The WebService formula can be used as follows in excel to extract information from this service:
