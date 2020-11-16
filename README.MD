@@ -197,3 +197,5 @@ LineStrings are offset using shapely's default 'round' option for the `.parallel
 Optionally return a complete GeoJSON document or EsriJSON document, or create a new project which can deal with bulk requests
 
 Optionally limit results to a single geometry `"type"`
+
+Optionally request averaging of point results when requesting both L and R cway such that only a single point is returned.
