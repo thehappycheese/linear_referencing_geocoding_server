@@ -5,26 +5,25 @@ Runs a REST server on localhost:8001 which will slice
 portions of the Main Roads Western Australia road network based on pair of SLKs
 (Straight Line Kilometer) and return a GeoJSON feature.
 
-Sliced sections can be optionally filtered by carriageway,
-and can be optionally offset.
-See the 'Usage' section below for more detail.
-
-The original LineString geometry will be cut at the specified endpoints, and properly truncated to reflect the requested SLK interval.
+The original LineString geometry will be properly truncated at the requested SLK interval endpoints.
 Points will be returned instead of lines if a zero length SLK interval is requested.
 
+Sliced sections can be optionally offset and/or filtered by carriageway,
+See the 'Usage' section below for more detail.
+
+
 ## Yes but Why?
-It is meant to be used in Excel or PowerBI to add a new text column of consisting of GeoJSON features based on each row of the original data.
-(See the 'Useage' section below). This can then be used to visualise the data against a map.
+The REST service can be called from Excel or PowerBI to add a GeoJSON 'geometry' column based on each row of data.
+This can then be used to visualise the data against a map.
+
+## How would you map / visualise that anyway?
+See my related PowerBI custom visual project  https://github.com/thehappycheese/powerbi-visual-geojson-map-1 
 
 ## Yes but don't we already have tools for that?
+Yes, but you are going to need arcmap or some similar GIS software and know how to use it very well.
+To slice linestring intervals at arbitrary SLKs is hard to do with built in geo-processing tools. Typically it requires a complex multi-step model. (and last time I checked it was extra difficult if you only have the tools available in the basic arcmap licence).
 
-Yes, but you are going to need an arcmap licence and know how to use it very well.
-To slice linestring intervals at arbitrary SLKs is hard to do (or maybe requires additional tools not available in the basic licence).
-
-This way you can do it in Excel or PowerBI or even a web browser. It can be used from a variety of technologies to slice the road network and update dashboards etc without any access to ESRI tools.
-
-## What tool can visualise that kind of data anyway?
-See my related PowerBI custom visual project  https://github.com/thehappycheese/powerbi-visual-geojson-map-1
+Also by using this REST server you can cut that step out of your pipeline. No need to wait for arcmap to load up on your potato computer, just geo-reference your shapes directly in Excel or PowerBI.
 
 ## Response Format
 The response will be GeoJSON with the following format
