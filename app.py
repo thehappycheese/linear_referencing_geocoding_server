@@ -3,6 +3,7 @@ from typing import List
 import json
 import geopandas as gpd
 
+# from waitress import serve as waitress_serve
 from flask import Flask, request, send_file, Response
 from shapely.geometry import Point
 from shapely.geometry.linestring import LineString
@@ -10,7 +11,7 @@ from shapely.geometry.multilinestring import MultiLineString
 import os
 import sys
 
-# This next line would disable the warning when the server is started:
+# This next line would disable the warning when the built-in flask server is started on the local machine:
 # os.environ["FLASK_ENV"] = "development"
 
 app = Flask(__name__)
@@ -205,13 +206,12 @@ def return_points_on_network(road: str, request_slk: float, offset: float, cway:
 		if offset == 0:
 			row_linestring_after_offset = row_linestring
 		else:
-			row_linestring_after_offset = []
 			offset_linestring_maybe_multi = row_linestring.parallel_offset(
 				distance=abs(offset / EARTH_METERS_PER_DEGREE),
 				side=('left' if offset < 0 else 'right')
 			)
 			if offset_linestring_maybe_multi.is_empty:
-				# TODO: No result. Do not emit error?
+				# TODO: No result. Do not emit error explaining that an offset operation removed a point?
 				return []
 			row_linestring_after_offset = offset_linestring_maybe_multi
 		

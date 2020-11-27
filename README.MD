@@ -5,25 +5,30 @@ Runs a REST server on localhost:8001 which will slice
 portions of the Main Roads Western Australia road network based on pair of SLKs
 (Straight Line Kilometer) and return a GeoJSON feature.
 
-The original LineString geometry will be properly truncated at the requested SLK interval endpoints.
-Points will be returned instead of lines if a zero length SLK interval is requested.
+This is different from the GeoJSON service available at data.wa.gov.au in for key ways:
 
-Sliced sections can be optionally offset and/or filtered by carriageway,
+1. The original LineString geometry will be properly truncated at the requested SLK interval endpoints.
+
+2. Points will be returned instead of lines if a zero length SLK interval is requested.
+
+3. Requested geometry (both points and lines) can be optionally **offset** and/or filtered by carriageway,
 See the 'Usage' section below for more detail.
 
+4. The returned GeoJSON contains a single `{"type":"Feature, ...}` object with multiple geometries, and only the geometry is returned, all other attributes of the road network data are stripped away.
 
-## Yes but Why?
-The REST service can be called from Excel or PowerBI to add a GeoJSON 'geometry' column based on each row of data.
-This can then be used to visualise the data against a map.
+## Yes but why?
+The REST service can be conveniently called from Excel or PowerBI to add a text/GeoJSON column based on each row of data.
+This can then be used to visualise the data.
 
-## How would you map / visualise that anyway?
 See my related PowerBI custom visual project  https://github.com/thehappycheese/powerbi-visual-geojson-map-1 
 
-## Yes but don't we already have tools for that?
-Yes, but you are going to need arcmap or some similar GIS software and know how to use it very well.
-To slice linestring intervals at arbitrary SLKs is hard to do with built in geo-processing tools. Typically it requires a complex multi-step model. (and last time I checked it was extra difficult if you only have the tools available in the basic arcmap licence).
-
-Also by using this REST server you can cut that step out of your pipeline. No need to wait for arcmap to load up on your potato computer, just geo-reference your shapes directly in Excel or PowerBI.
+## Don't we already have tools for that?
+Yes but if you are using ArcMap for example
+- you firstly need access to this software
+- you need a complex geo-processing model; To slice and truncate linestring geometry based on arbitrary SLKs is hard to do with built in geo-processing tools. Typically it requires a complex multi-step model. (and last time I checked it was extra difficult if you only have the tools available in the basic arcmap licence).
+- you need a tedious data workflow; export your data from excel, powerbi etc, import it into arcmap, do the processing, then export it again
+  - Obviously if you are happy to visualise the data in ArcMap or some ESRI product then there is no need to export it again
+  - But my goal is to make powerBI reports with maps, so re-exporting is a problem. 
 
 ## Response Format
 The response will be GeoJSON with the following format
@@ -121,6 +126,7 @@ Use a production WSGI server instead`
 Then go into your browser and paste the following URL into the location bar to confirm everything is working
 > http://localhost:8001/?road=H001,H012&slk_from=6.3,16.4&slk_to=7,17.35&offset=-5,5&cway=L,R
 
+### URL Parameters
 Note
  - Each parameter can accept a list of values separated by a comma or just a single value.
    - In the example above two values are provided for each parameter. eg. road=H001,H012 (Albany Highway and Leach Highway).
@@ -150,6 +156,17 @@ The WebService formula can be used as follows in excel to extract information fr
 =WEBSERVICE("http://localhost:8001/?road=H001,H012&slk_from=6.3,16.4&slk_to=7,17.35&offset=-5,5&cway=L,R")
 ```
 Concatenation of other cell values can be used to build the request based on each row of the spreadsheet.
+
+### Usage in PowerBI
+Create a blank query, open the query editor and try something like:
+```powerbi
+let 
+    source = [... some source ...]
+    with_query_column = Table.AddColumn(source, each "?road=" & [road_number] & "&slk_from=" & [slk_from] & "&slk_to=" & [slk_to])
+    with_GeoJSON_column = Table.AddColumn(with_query_column,"GeoJSON", each Text.FromBinary(Web.Contents("http://wxwk343209.mrwa.wa.gov.au:8001/" & [query]))),
+in
+    with_GeoJSON_column
+```
 
 
 ### local machine vs cloud
