@@ -5,7 +5,7 @@ Runs a REST server on localhost:8001 which will slice
 portions of the Main Roads Western Australia road network based on pair of SLKs
 (Straight Line Kilometer) and return a GeoJSON feature.
 
-This is different from the GeoJSON service available at data.wa.gov.au in for key ways:
+This is different from the GeoJSON service available at data.wa.gov.au in four key ways:
 
 1. The original LineString geometry will be properly truncated at the requested SLK interval endpoints.
 
