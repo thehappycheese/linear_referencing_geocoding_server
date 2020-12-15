@@ -8,6 +8,7 @@ from flask import Flask, request, send_file, Response
 from shapely.geometry import Point
 from shapely.geometry.linestring import LineString
 from shapely.geometry.multilinestring import MultiLineString
+from shapely import wkt
 import os
 import sys
 
@@ -68,6 +69,8 @@ def hello_world():
 		return send_file('static_show/form.html')
 	if request.args.get("show", default=None) is not None:
 		return send_file('static_show/map.html')
+	
+	request_wkt = request.args.get("wkt", default=None) is not None
 	
 	request_road = request.args.get("road", default=None)
 	try:
@@ -137,16 +140,19 @@ def hello_world():
 		slice_results = []
 		for road, slk_from, slk_to, offset, cway in zip(request_road, request_slk_from, request_slk_to, request_offset, request_carriageway):
 			if math.isclose(slk_from, slk_to):
-				ff = return_points_on_network(road, slk_from, offset, cway)
+				ff = return_points_on_network(road, slk_from, offset, cway, request_wkt)
 				slice_results.extend(ff)
 			else:
-				slice_results.extend(cut_segments_from_network(road, slk_from, slk_to, offset, cway))
+				slice_results.extend(cut_segments_from_network(road, slk_from, slk_to, offset, cway, request_wkt))
 		if len(slice_results) == 0:
 			raise Slice_Network_Exception("Valid user parameters produced no resulting geometry. Are the SLK bounds within the extent of the road?")
-		elif len(slice_results) == 1:
-			result = f'{{"type": "Feature", "properties": null, "geometry": {slice_results[0]}}}'
+		if request_wkt:
+			result = ",".join(slice_results)
 		else:
-			result = f'{{"type": "Feature", "properties": null, "geometry": {{"type":"GeometryCollection", "geometries":[{",".join(slice_results)}]}}}}'
+			if len(slice_results) == 1:
+				result = f'{{"type": "Feature", "properties": null, "geometry": {slice_results[0]}}}'
+			else:
+				result = f'{{"type": "Feature", "properties": null, "geometry": {{"type":"GeometryCollection", "geometries":[{",".join(slice_results)}]}}}}'
 		return Response(result)  # , mimetype="application/json")
 	except Slice_Network_Exception as slice_network_exception:
 		return Response(f"error: unable to slice network with the provided parameters: {slice_network_exception.message}", status=400)
@@ -166,7 +172,7 @@ class Slice_Network_Exception(Exception):
 		self.message = message
 
 
-def return_points_on_network(road: str, request_slk: float, offset: float, cway: str) -> List[str]:
+def return_points_on_network(road: str, request_slk: float, offset: float, cway: str, request_wkt:bool) -> List[str]:
 	road_segment_rows = gdf_all_roads[
 		(gdf_all_roads["ROAD"] == road.strip().upper()) & (gdf_all_roads["START_SLK"] <= request_slk) & (gdf_all_roads["END_SLK"] >= request_slk)
 	]
@@ -237,13 +243,16 @@ def return_points_on_network(road: str, request_slk: float, offset: float, cway:
 		output.append(point_result)
 	if len(output) == 0:
 		return []
-	if len(output) > 1:
-		return [f'{{"type":"MultiPoint","coordinates":[{",".join(json.dumps([item.coords[0][0],item.coords[0][1]]) for item in output)}]}}']
+	if request_wkt:
+		return [",".join(item.wkt for item in output)]
 	else:
-		return [f'{{"type":"Point","coordinates":{json.dumps([output[0].coords[0][0], output[0].coords[0][1]])}}}']
+		if len(output) > 1:
+			return [f'{{"type":"MultiPoint","coordinates":[{",".join(json.dumps([item.coords[0][0],item.coords[0][1]]) for item in output)}]}}']
+		else:
+			return [f'{{"type":"Point","coordinates":{json.dumps([output[0].coords[0][0], output[0].coords[0][1]])}}}']
 
 
-def cut_segments_from_network(road: str, request_slk_from: float, request_slk_to: float, offset: float, cway: str) -> List[str]:
+def cut_segments_from_network(road: str, request_slk_from: float, request_slk_to: float, offset: float, cway: str, request_wkt:bool) -> List[str]:
 	
 	if request_slk_to < request_slk_from:
 		# The user should not see this error, the code above is supposed to silently swap the SLKs if they are the wrong way around.
@@ -344,13 +353,17 @@ def cut_segments_from_network(road: str, request_slk_from: float, request_slk_to
 				output_after_offset.append(offset_linestring_maybe_multi)
 		# print("o after offset")
 		# print(output_after_offset)
-		
-	if len(output_after_offset) == 1:
-		return [json.dumps(output_after_offset[0].__geo_interface__)]
-	elif len(output_after_offset) > 1:
-		return [json.dumps(MultiLineString(output_after_offset).__geo_interface__)]
-	else:
+	
+	if len(output_after_offset) == 0:
 		raise Slice_Network_Exception(f"Cutting network succeeded producing {len(output)} features, but offsetting the results failed. Try using a smaller offset, or perhaps shorter road segments will work?")
+	if request_wkt:
+		return [",".join(item.wkt for item in output_after_offset)]
+	else:
+		if len(output_after_offset) == 1:
+			return [json.dumps(output_after_offset[0].__geo_interface__)]
+		elif len(output_after_offset) > 1:
+			return [json.dumps(MultiLineString(output_after_offset).__geo_interface__)]
+		
 
 
 if __name__ == '__main__':
