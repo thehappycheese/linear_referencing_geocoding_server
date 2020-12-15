@@ -3,7 +3,7 @@
 ## Purpose
 Runs a REST server on localhost:8001 which will slice
 portions of the Main Roads Western Australia road network based on pair of SLKs
-(Straight Line Kilometer) and return a GeoJSON feature.
+(Straight Line Kilometer) and return a GeoJSON (or WKT) feature.
 
 This is different from the GeoJSON service available at data.wa.gov.au in four key ways:
 
@@ -30,8 +30,17 @@ Yes but if you are using ArcMap for example
   - Obviously if you are happy to visualise the data in ArcMap or some ESRI product then there is no need to export it again
   - But my goal is to make powerBI reports with maps, so re-exporting is a problem. 
 
-## Response Format
-The response will be GeoJSON with the following format
+## Response Format - WKT
+When the `wkt` url parameter is included, each request will return a comma separated string of [WKT objects](https://en.wikipedia.org/wiki/Well-known_text_representation_of_geometry).
+
+See table below showing URL valid parameters.
+
+
+## Response Format - GeoJSON
+When the `wkt` url parameter is omitted, each response will be a single [GeoJSON](https://en.wikipedia.org/wiki/GeoJSON) feature:
+
+See table below showing URL valid parameters.
+
 ```json5
 {
   "type":"Feature",
@@ -132,12 +141,13 @@ Note
    - In the example above two values are provided for each parameter. eg. road=H001,H012 (Albany Highway and Leach Highway).
    - The **n**<sup>th</sup> item in the `road=` list corresponds with the **n**<sup>th</sup> item in the `slk_from=` list and so on.
    - All lists must be the same length.
- - Only one GeoJSON "Feature" will be returned per request. The Feature `"geometry"` may be any valid GeoJSON geometry object including: 
+ - Only one GeoJSON `"Feature"` will be returned per request. The `"geometry"` may be any valid GeoJSON geometry object including: 
    - a "Point"
    - a "MultiPoint"
    - a "LineString"
-   - a "MultiLineString" or
+   - a "MultiLineString" or even
    - a "GeometryCollection"
+ - If the `wkt` parameter is supplied, then a comma separated WKT string will be returned instead of GeoJSON.
  
 the parameters are
 |Name|Description|Example Value|Optional|
@@ -162,9 +172,19 @@ Concatenation of other cell values can be used to build the request based on eac
 Create a blank query, open the query editor and try something like:
 ```powerbi
 let 
-    source = [... some source ...]
-    with_query_column = Table.AddColumn(source, each "?road=" & [road_number] & "&slk_from=" & [slk_from] & "&slk_to=" & [slk_to])
-    with_GeoJSON_column = Table.AddColumn(with_query_column,"GeoJSON", each Text.FromBinary(Web.Contents("http://wxwk343209.mrwa.wa.gov.au:8001/" & [query]))),
+    source = /* some source */,
+    with_query_column = Table.AddColumn(
+        source,
+        "query",
+        each "?road=" & [road_number] & "&slk_from=" & [slk_from] & "&slk_to=" & [slk_to]
+    )
+    with_GeoJSON_column = Table.AddColumn(
+        with_query_column,
+        "GeoJSON",
+        each Text.FromBinary(
+            Web.Contents("http://wxwk343209.mrwa.wa.gov.au:8001/" & [query], [ManualStatusHandling={400,500}])
+        )
+    ),
 in
     with_GeoJSON_column
 ```
