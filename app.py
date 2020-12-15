@@ -3,7 +3,7 @@ from typing import List
 import json
 import geopandas as gpd
 
-# from waitress import serve as waitress_serve
+from waitress import serve as waitress_serve
 from flask import Flask, request, send_file, Response
 from shapely.geometry import Point
 from shapely.geometry.linestring import LineString
@@ -154,8 +154,9 @@ def hello_world():
 		exc_type, exc_obj, exc_tb = sys.exc_info()
 		fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
 		print(exc_type, fname, exc_tb.tb_lineno)
-		print("Encountered unknown error")
+		print(f"Encountered unknown error on request {request.full_path}")
 		print(e)
+		exit()
 		return Response(f"error: Unknown error. ", status=500)
 		
 		
@@ -327,13 +328,22 @@ def cut_segments_from_network(road: str, request_slk_from: float, request_slk_to
 				distance=abs(offset / EARTH_METERS_PER_DEGREE),
 				side=('left' if offset < 0 else 'right')
 			)
+			# print(offset_linestring_maybe_multi)
 			if offset_linestring_maybe_multi.is_empty:
 				continue
 			if isinstance(offset_linestring_maybe_multi, MultiLineString):
 				# convert any multilinestring back to linestring.
-				output_after_offset.extend(LineString(coords) for coords in offset_linestring_maybe_multi if len(coords) > 0)
+				# /?road=H015&slk_from=30.97&slk_to=31&offset=-35&cway=LS
+				# /?road=H015&slk_from=30.97&slk_to=31&offset=-35&cway=LS
+				# /?road=H015&slk_from=30.97&slk_to=31&offset=-35&cway=LS
+				# /?road=H015&slk_from=30.97&slk_to=31&offset=-35&cway=LS
+				for linestring in offset_linestring_maybe_multi:
+					if not linestring.is_empty:
+						output_after_offset.append(linestring)
 			else:
 				output_after_offset.append(offset_linestring_maybe_multi)
+		# print("o after offset")
+		# print(output_after_offset)
 		
 	if len(output_after_offset) == 1:
 		return [json.dumps(output_after_offset[0].__geo_interface__)]
@@ -344,7 +354,5 @@ def cut_segments_from_network(road: str, request_slk_from: float, request_slk_to
 
 
 if __name__ == '__main__':
-	app.run(host='0.0.0.0', port=8001)
-	# waitress_serve(app, host='0.0.0.0', port=8001)
-
-
+	# app.run(host='0.0.0.0', port=8001)
+	waitress_serve(app, host='0.0.0.0', port=8001)
