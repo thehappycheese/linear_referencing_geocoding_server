@@ -2,7 +2,7 @@
 
 ## Purpose
 Runs a REST server on localhost:8001 which will slice
-portions of the Main Roads Western Australia road network based on pair of SLKs
+portions of the Main Roads Western Australia road network based on a pair of SLKs
 (Straight Line Kilometer) and return a GeoJSON (or WKT) feature.
 
 This is different from the GeoJSON service available at data.wa.gov.au in four key ways:
@@ -76,8 +76,8 @@ There are two ways to set up python that might work:
    - Miniconda is the preferred option because it will install
      precompiled binaries and 'just work'
    - Miniconda is the same as 'Anaconda' but without the hundreds of pre-installed packages.
-     For a quicker download an install I recommend this option.
-   - If the conda installer doesnt work,
+     For a quicker download and installation I recommend this option.
+   - If the conda installer doesn't work,
      - Obtain a zip file download.
      - Extract the zip into `%USERPROFILE%\Miniconda\...` 
        (ie `C:\Users\e12345\Miniconda\`)
@@ -190,13 +190,13 @@ in
 ```
 
 
-### local machine vs cloud
+### Local Machine vs Cloud
 This repo contains a Flask 'app'. To make it a 'webservice' the 'app' must be paired with a suitable 'server'.
 
 While this app was intended to be run in the cloud, it can be executed on a local machine as described above.
 Running it locally will use Flask's built in test server which is not intended for deployment to the wide web
 (and therefore the warning message described above may appear)
-However when it is deployed to the cloud the cloud provider will run a suitable
+However when it is deployed to the cloud, the cloud provider will run a suitable
 [WSGI](https://en.wikipedia.org/wiki/Web_Server_Gateway_Interface)
 'server' which will safely run this 'app' an pass requests and responses. 
 
@@ -222,11 +222,11 @@ Permit the injection of arbitrary "properties" into the returned feature by acce
 
 Optionally populate the feature "properties" with a summary of segment length or any other useful data
  - the query string that generated it perhaps?
- - Perhaps the surface width database could also be loaded and a surface "area" property could be returned.
+ - Perhaps the surface width database could also be loaded, and a surface "area" property could be returned.
  - Maybe elevation data could be sliced and attached as well? That's probably pushing it a bit too complicated...
 
 Optionally return a feature for each subquery rather than a single feature with many geometries.
- - I cant think of a use-case for this It would possibly give more flexibility when applying line styles in OpenLayers or Leaflet 
+ - I can't think of a use-case for this It would possibly give more flexibility when applying line styles in OpenLayers or Leaflet 
 
 Allow slicing of a road "from the start" or "to the end" possibly by providing an empty value to the `slk_from` or `slk_to` parameters. Or maybe the string `"ALL"` should be used instead. This could potentially break the server if say the whole of Albany Hwy was requested at once.
 
