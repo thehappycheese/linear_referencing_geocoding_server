@@ -14,7 +14,7 @@ from waitress import serve as waitress_serve
 # os.environ["FLASK_ENV"] = "development"
 from util.parse_request_parameters import parse_request_parameters, URL_Parameter_Parse_Exception
 from util.sample_linestring import sample_linestring
-from util.serialise_output_geometry import serialise_output_geometry
+from util.serialise_output_geometry import serialise_output_geometry, Serialise_Results_Exception
 
 app = Flask(__name__)
 
@@ -63,7 +63,8 @@ def route_handle_get():
 	
 	except Slice_Network_Exception as slice_network_exception:
 		return Response(f"error: unable to slice network with the provided parameters: {slice_network_exception.message}", status=400)
-	
+	except Serialise_Results_Exception as serialise_results_exception:
+		return Response(f"error: unable to serialise results with the provided parameters: {serialise_results_exception.message}", status=400)
 	except Exception as e:
 		exc_type, exc_obj, exc_tb = sys.exc_info()
 		file_name = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
@@ -71,11 +72,6 @@ def route_handle_get():
 		print(f"Encountered unknown error on request {request.full_path}")
 		print(e)
 		return Response(f"error: Unknown error. ", status=500)
-
-
-if __name__ == '__main__':
-	# app.run(host='0.0.0.0', port=8001)
-	waitress_serve(app, host='0.0.0.0', port=8001)
 
 
 class Slice_Network_Exception(Exception):
@@ -107,3 +103,8 @@ def filter_dataframe(all_road_segments: GeoDataFrame, road: str, request_slk_fro
 		raise Slice_Network_Exception(f"Invalid carriageway parameter: {carriageway}. Must be any combination of the three letters 'L', 'R' and 'S'. eg &cwy=LR or &cwy=RL or &cwy=S. omit the parameter to query all.")
 	
 	return result
+
+
+if __name__ == '__main__':
+	# app.run(host='0.0.0.0', port=8001)
+	waitress_serve(app, host='0.0.0.0', port=8001)

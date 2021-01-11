@@ -25,7 +25,7 @@ def serialise_output_geometry(geometry_list: List[Union[Point, MultiPoint, LineS
 		if point_list and line_list:
 			# TODO: this exception may not be desirable? The code below will work anyway,
 			#  but will only keep lines, discarding any points. The aim is to ensures the user doesnt lose data in a way that would be hard to diagnose
-			raise Exception("Unable to serialise both points and lines when using the WKT output type. Try GeoJSON output instead.")
+			raise Serialise_Results_Exception("Unable to serialise both points and lines when using the WKT output type. Try GeoJSON output instead.")
 		result = unary_union(geometry_list).wkt
 	
 	elif output_type == "GEOJSON":
@@ -48,16 +48,25 @@ def serialise_output_geometry(geometry_list: List[Union[Point, MultiPoint, LineS
 				if line_list:
 					geoms.append(unary_union(line_list))
 				if len(geoms) == 0:
-					raise Exception("Something went wrong when computing the union of geometries in the serialise_output_geometry() function")
+					raise Serialise_Results_Exception("Something went wrong when computing the union of geometries in the serialise_output_geometry() function. 0 geoms returned.")
 			else:
 				geoms = geometry_list
-			
-			result["geometry"] = {
-				"type": "GeometryCollection",
-				"geometries": [
-					item.__geo_interface__ for item in geoms
-				]
-			}
+				
+			if len(geoms) == 1:
+				result["geometry"] = geoms[0].__geo_interface__
+			else:
+				result["geometry"] = {
+					"type": "GeometryCollection",
+					"geometries": [
+						item.__geo_interface__ for item in geoms
+					]
+				}
 		
 		result = json.dumps(result)
 	return result
+
+
+class Serialise_Results_Exception(Exception):
+	def __init__(self, message):
+		super().__init__(message)
+		self.message = message
