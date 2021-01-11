@@ -20,8 +20,9 @@
 <body>
 	<div id="map" class="map"></div>
 	<script>
-		var xx = new URLSearchParams(window.location.search)
-		xx.delete("show")
+		var xx = new URLSearchParams(window.location.search);
+		xx.delete("show");
+		xx.delete("wkt");
 		fetch("?" + xx.toString())
 			.then(resp=>{
 				if(resp.ok) return resp
