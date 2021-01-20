@@ -5,86 +5,169 @@
 	<link rel="stylesheet"
 		href="https://cdn.jsdelivr.net/gh/openlayers/openlayers.github.io@master/en/v6.4.3/css/ol.css" type="text/css">
 	<style>
-		.body{
+		body{
 			height: 100%;
 			width: 100%;
 			padding:0;
 			margin:0;
 			display:grid;
 			grid-template-columns: auto;
+			font-family:sans-serif;
+		}
+		#buttoncontainer{
+			position: absolute;
+			top:5px;
+			left:50px;
+			background-color: rgba(255,255,255,0.4);
+			padding:10px;
+		}
+		label{
+			display:block;
 		}
 	</style>
 	<script src="https://cdn.jsdelivr.net/gh/openlayers/openlayers.github.io@master/en/v6.4.3/build/ol.js"></script>
+	<script>
+
+window.addEventListener("DOMContentLoaded", do_fetch)
+function do_fetch(e){
+	fetch("secrets/")
+	.then(resp=>{
+		if(resp.ok) return resp
+		document.querySelector('body').innerHTML="Could not fetch API keys for imagery layers. not ok."
+		throw new Error("Cannot continue, initial response to request for secrets not ok.")
+	})
+	.then(resp=>resp.json())
+	.catch(err=>{
+		console.log(err)
+		document.querySelector('body').innerHTML="Could not fetch API keys for imagery layers. catch."
+		throw new Error("Cannot continue, initial response to request for secrets not ok. Catch.")
+	})
+	.then(secrets=>{
+		var xx = new URLSearchParams(window.location.search);
+		xx.delete("show");
+		xx.delete("wkt");
+
+		fetch("?" + xx.toString())
+		.then(resp=>{
+			if(resp.ok) return resp
+			resp.text().then(txt=>document.body.innerHTML=txt)
+			throw new Error("Cannot continue, initial response not ok.")
+		})
+		.then(r => r.json())
+		.catch(err=>{
+			console.log(err)
+			document.body.innerHTML="Error in response. GEOJSON could not be loaded"
+			throw new Error("Cannot continue, initial response not ok.")
+		})
+		.then(GEOJSON => {
+
+			let view = new ol.View({
+				center: [12898411.077810172, -3757643.0263860035],
+				zoom: 5.5,
+			});
+
+			let featureProjection = view.getProjection()
+			let dataProjection = new ol.format.GeoJSON().readProjection({"crs":{"type":"EPSG","properties":{"code":4326}}})
+			let read_features = new ol.format.GeoJSON({featureProjection, dataProjection}).readFeatures(GEOJSON);
+			var layer_geojson = new ol.layer.Vector({
+				source: new ol.source.Vector({
+					features: read_features,
+				}),
+				style:[
+					new ol.style.Style({
+						stroke: new ol.style.Stroke({
+							//color: '#319FD3',
+							color: 'white',
+							width: 7,
+						}),
+						image: new ol.style.Circle({
+								radius: 8,
+								stroke: new ol.style.Stroke({color: 'white', width:7}),
+							}),
+					}),
+					new ol.style.Style({
+						stroke: new ol.style.Stroke({
+							//color: '#319FD3',
+							color: 'red',
+							width: 3,
+						}),
+						image: new ol.style.Circle({
+								radius: 8,
+								stroke: new ol.style.Stroke({color: 'red', width:3}),
+							}),
+					})
+				]
+			});
+
+			window.layer_osm = new ol.layer.Tile({
+				source: new ol.source.OSM()
+			})
+			window.layer_metro_map = new ol.layer.Tile({
+				source: new ol.source.XYZ({
+					url:secrets.metromap,
+				})
+			});
+
+			window.layer_skyview_tiles = new ol.layer.Tile({
+				source: new ol.source.TileArcGISRest({
+					params:{
+						FORMAT:"jpgpng",
+						compressionQuality:75,
+						TRANSPARENT:false
+					},
+					// crossOrigin:"Anonymous", // Required if we need to retrieve canvas pixle data later.
+					url:secrets.skyview
+				})
+			});
+
+			window.map = new ol.Map({
+				layers: [window.layer_osm, layer_geojson],
+				target: 'map',
+				view
+			});
+			let target_extent = layer_geojson.getSource().getExtent()
+			let resolution = view.getResolutionForExtent(target_extent)
+			let target_zoom = view.getZoomForResolution(resolution)/1.01
+			let target_center = ol.extent.getCenter(target_extent)
+			view.animate({
+				zoom:target_zoom,
+				center:target_center,
+				duration: 1500,
+				easing: ol.easing.easeOut
+			})
+		});
+	});
+}
+
+function radio_update(e){
+	map.removeLayer(layer_osm)
+	map.removeLayer(layer_skyview_tiles)
+	map.removeLayer(layer_metro_map)
+
+	switch(e.target.value){
+		case "openstreetmap":
+			map.getLayers().insertAt(0, layer_osm)
+			break
+		case "metromap":
+		map.getLayers().insertAt(0, layer_metro_map)
+			break
+		case "skyview":
+			map.getLayers().insertAt(0, layer_skyview_tiles)
+			break
+	}
+}
+	</script>
 </head>
 
 <body>
 	<div id="map" class="map"></div>
-	<script>
-		var xx = new URLSearchParams(window.location.search);
-		xx.delete("show");
-		xx.delete("wkt");
-		fetch("?" + xx.toString())
-			.then(resp=>{
-				if(resp.ok) return resp
-				resp.text().then(txt=>document.querySelector('div').innerHTML=txt)
-			})
-			.then(r => r.json())
-			.catch(err=>{
-				console.log(err)
-				document.querySelector('div').innerHTML=err.toString()
-			})
-			.then(GEOJSON => {
-
-				let view = new ol.View({
-					center: [12898411.077810172, -3757643.0263860035],
-					zoom: 5.5,
-				});
-
-				let featureProjection = view.getProjection()
-				let dataProjection = new ol.format.GeoJSON().readProjection({"crs":{"type":"EPSG","properties":{"code":4326}}})
-				let read_features = new ol.format.GeoJSON({featureProjection, dataProjection}).readFeatures(GEOJSON);
-				var layer_geojson = new ol.layer.Vector({
-					source: new ol.source.Vector({
-						features: read_features,
-					}),
-					style:(feature)=>{
-                        console.log(feature.getGeometry().getType())
-                        return new ol.style.Style({
-
-                            stroke: new ol.style.Stroke({
-                                color: '#319FD3',
-                                width: 4,
-                            }),
-                            image: new ol.style.Circle({
-                                  radius: 8,
-                                  stroke: new ol.style.Stroke({color: '#319FD3', width:4}),
-                                }),
-                        })
-                    },
-				});
-				
-				layer_osm = new ol.layer.Tile({
-					source: new ol.source.OSM()
-				})
-
-				window.map = new ol.Map({
-					layers: [layer_osm, layer_geojson],
-					target: 'map',
-					view
-				});
-				let target_extent = layer_geojson.getSource().getExtent()
-				let resolution = view.getResolutionForExtent(target_extent)
-				let target_zoom = view.getZoomForResolution(resolution)/1.01
-				let target_center = ol.extent.getCenter(target_extent)
-				view.animate({
-					zoom:target_zoom,
-					center:target_center,
-					duration: 1500,
-					easing: ol.easing.easeOut
-				})
-
-			});
-	</script>
+	<div id="buttoncontainer">
+		<label><input name="underlay" type="radio" onchange="radio_update(event);" value="openstreetmap" checked/> Use Open Street Map</label>
+		<label><input name="underlay" type="radio" onchange="radio_update(event);" value="metromap" /> Use 'metromap' imagery</label>
+		<label><input name="underlay" type="radio" onchange="radio_update(event);" value="skyview" /> Use 'skyview' imagery</label>
+	</div>
 </body>
+
+
 
 </html>

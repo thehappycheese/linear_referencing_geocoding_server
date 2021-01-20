@@ -26,6 +26,11 @@ gdf_all_roads: gpd.GeoDataFrame = gpd.read_file(
 )
 
 
+@app.route('/secrets/')
+def route_handle_get_secrets():
+	return send_file('static_show/secrets.json')
+
+
 @app.route('/')
 def route_handle_get():
 	if not request.args:

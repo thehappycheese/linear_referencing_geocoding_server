@@ -2,3 +2,4 @@ data.gdb
 __pycache__
 .idea
 .venv
+secrets.json
