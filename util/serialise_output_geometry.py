@@ -1,5 +1,5 @@
 import json
-from typing import Union, List, Literal
+from typing import Union, List  # , Literal
 
 from shapely.geometry import Point, MultiPoint, MultiLineString, LineString
 from shapely.ops import unary_union
