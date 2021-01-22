@@ -43,10 +43,6 @@ def strip_feature(feature):
 class Data_Manager:
 	
 	def __init__(self):
-		t0 = time.time()
-		self.registry = self.load_registry()
-		t1 = time.time()
-		print(f"time to fetch register {t1 - t0}")
 		self.narrow_register = {}
 		self.loaded_chunks: OrderedDict[str, geopandas.GeoDataFrame] = OrderedDict()
 		self.loaded_chunk_size = 0
@@ -125,10 +121,9 @@ class Data_Manager:
 		try:
 			with lz4.frame.open("data/reg.json.lz4", mode="rb") as lz4_file:
 				f = lz4_file.read()
-				return json.loads(f.decode("utf-8"))
+				self.registry = json.loads(f.decode("utf-8"))
 		except:
 			raise Exception("Registry could not be loaded. try .refresh_data() ?")
-			return None
 	
 	def lookup_road_file(self, road):
 		try:
@@ -158,6 +153,28 @@ class Data_Manager:
 			self.loaded_chunk_size += df.memory_usage(deep=True).sum()
 			self.check_mem_use()
 			return df[df["ROAD"] == road]
+	
+	def fetch_filter(self, road: str, request_slk_from: float, request_slk_to: float, carriageway: str) -> geopandas.GeoDataFrame:
+		road_segments = fetch(self, road)
+		mask = (df["ROAD"] == road) & (road_segments["START_SLK"] <= request_slk_to) & (road_segments["END_SLK"] >= request_slk_from)
+		if carriageway == "LS":
+			mask = mask & (result["CWY"] == "Left") | (result["CWY"] == "Single")
+		elif carriageway == "RS":
+			mask = mask & (result["CWY"] == "Right") | (result["CWY"] == "Single")]
+		elif carriageway == "LR":
+			mask = mask & (result["CWY"] == "Right") | (result["CWY"] == "Left")]
+		elif carriageway == "R":
+			mask = mask & (result["CWY"] == "Right")
+		elif carriageway == "L":
+			mask = mask & (result["CWY"] == "Left")
+		elif carriageway == "S":
+			mask = mask & (result["CWY"] == "Single")
+		elif carriageway == "LRS":
+			pass
+		# else:
+		# 	raise Slice_Network_Exception(f"Invalid carriageway parameter: {carriageway}. Must be any combination of the three letters 'L', 'R' and 'S'. eg &cwy=LR or &cwy=RL or &cwy=S. omit the parameter to query all.")
+		
+		return road_segments[mask]
 	
 	def check_mem_use(self):
 		while self.loaded_chunk_size > 5_000_000:
@@ -199,4 +216,3 @@ def test():
 	print(dm.loaded_chunks.keys())
 
 
-test()
