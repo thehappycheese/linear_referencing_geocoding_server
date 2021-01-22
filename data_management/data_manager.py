@@ -155,20 +155,20 @@ class Data_Manager:
 			return df[df["ROAD"] == road]
 	
 	def fetch_filter(self, road: str, request_slk_from: float, request_slk_to: float, carriageway: str) -> geopandas.GeoDataFrame:
-		road_segments = fetch(self, road)
-		mask = (df["ROAD"] == road) & (road_segments["START_SLK"] <= request_slk_to) & (road_segments["END_SLK"] >= request_slk_from)
+		road_segments = self.fetch(road)
+		mask = (road_segments["ROAD"] == road) & (road_segments["START_SLK"] <= request_slk_to) & (road_segments["END_SLK"] >= request_slk_from)
 		if carriageway == "LS":
-			mask = mask & (result["CWY"] == "Left") | (result["CWY"] == "Single")
+			mask = mask & ((road_segments["CWY"] == "Left") | (road_segments["CWY"] == "Single"))
 		elif carriageway == "RS":
-			mask = mask & (result["CWY"] == "Right") | (result["CWY"] == "Single")]
+			mask = mask & ((road_segments["CWY"] == "Right") | (road_segments["CWY"] == "Single"))
 		elif carriageway == "LR":
-			mask = mask & (result["CWY"] == "Right") | (result["CWY"] == "Left")]
+			mask = mask & ((road_segments["CWY"] == "Right") | (road_segments["CWY"] == "Left"))
 		elif carriageway == "R":
-			mask = mask & (result["CWY"] == "Right")
+			mask = mask & (road_segments["CWY"] == "Right")
 		elif carriageway == "L":
-			mask = mask & (result["CWY"] == "Left")
+			mask = mask & (road_segments["CWY"] == "Left")
 		elif carriageway == "S":
-			mask = mask & (result["CWY"] == "Single")
+			mask = mask & (road_segments["CWY"] == "Single")
 		elif carriageway == "LRS":
 			pass
 		# else:
