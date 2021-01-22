@@ -29,7 +29,10 @@ app = Flask(__name__)
 
 @app.route('/secrets/')
 def route_handle_get_secrets():
-	return send_file('static_show/secrets.json')
+	try:
+		return send_file('static_show/secrets.json')
+	except:
+		return Response("")
 
 
 @app.route('/')

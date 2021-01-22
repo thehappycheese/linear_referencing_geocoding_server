@@ -35,7 +35,7 @@ def strip_feature(feature):
 	return {
 		**feature,
 		"properties": {
-			item: feature["properties"]["ROAD"] for item in ["ROAD", "START_SLK", "END_SLK", "CWY"]
+			item: feature["properties"][item] for item in ["ROAD", "START_SLK", "END_SLK", "CWY"]
 		}
 	}
 
@@ -149,7 +149,11 @@ class Data_Manager:
 				print(f[:100])
 				feature_collection = json.loads(f.decode("utf-8"))
 				df = geopandas.GeoDataFrame.from_features(feature_collection)
-				df = df.astype({"START_SLK": float, "END_SLK": float})
+				# print("try convert")
+				# print(df)
+				# df = df.astype({"START_SLK": float, "END_SLK": float})
+				# print("converted")
+				# print(df)
 			self.loaded_chunks[file] = df
 			self.loaded_chunk_size += df.memory_usage(deep=True).sum()
 			self.check_mem_use()

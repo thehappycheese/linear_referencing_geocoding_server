@@ -26,12 +26,18 @@ def sample_linestring(road_segments: GeoDataFrame, slk_cut_first: float, slk_cut
 		row_slk_from = float(row["START_SLK"])
 		row_slk_to = float(row["END_SLK"])
 		
-		multilinestring = row.geometry
-		if multilinestring.geom_type != "MultiLineString":
-			raise Exception("Encountered unexpected geometry in the road network data. The shape of a record was not a MultiLineString.")
-		if len(multilinestring.geoms) != 1:
-			raise Exception("Encountered unexpected geometry in the road network data. The record's geometry was a MultiLineString (as expected), but it did not contain exactly one LineString.")
-		linestring = multilinestring.geoms[0]
+		#multilinestring = row.geometry
+		#if multilinestring.geom_type != "MultiLineString":
+		#	raise Exception("Encountered unexpected geometry in the road network data. The shape of a record was not a MultiLineString.")
+		#if len(multilinestring.geoms) != 1:
+		#	raise Exception("Encountered unexpected geometry in the road network data. The record's geometry was a MultiLineString (as expected), but it did not contain exactly one LineString.")
+		#linestring = multilinestring.geoms[0]
+		
+		if row.geometry.geom_type == "LineString":
+			linestring = row.geometry
+		else:
+			raise Exception("Encountered unexpected geometry in the road network data. The record's geometry was a not a LineString")
+		
 		
 		if OUTPUT_POINT:
 			if row_slk_from <= slk_cut_first <= row_slk_to:
