@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import os
 import sys
-from typing import List, Literal, Union
+from typing import List, Union
 
 import geopandas as gpd
 from flask import Flask, request, send_file, Response
@@ -28,7 +28,10 @@ gdf_all_roads: gpd.GeoDataFrame = gpd.read_file(
 
 @app.route('/secrets/')
 def route_handle_get_secrets():
-	return send_file('static_show/secrets.json')
+	try:
+		return send_file('static_show/secrets.json')
+	except:
+		return Response("")
 
 
 @app.route('/')
@@ -40,7 +43,8 @@ def route_handle_get():
 		return send_file('static_show/map.html')
 	
 	# noinspection PyTypeChecker
-	request_output_type: Literal["WKT", "GEOJSON"] = "WKT" if request.args.get("wkt", default=None) is not None else "GEOJSON"
+	# request_output_type: Literal["WKT", "GEOJSON"] = "WKT" if request.args.get("wkt", default=None) is not None else "GEOJSON"
+	request_output_type = "WKT" if request.args.get("wkt", default=None) is not None else "GEOJSON"
 	
 	try:
 		slice_requests = parse_request_parameters(request)

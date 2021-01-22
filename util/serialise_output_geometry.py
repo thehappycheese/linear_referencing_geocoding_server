@@ -1,11 +1,12 @@
 import json
-from typing import Union, List, Literal
+from typing import Union, List#, Literal
 
 from shapely.geometry import Point, MultiPoint, MultiLineString, LineString
 from shapely.ops import unary_union
 
 
-def serialise_output_geometry(geometry_list: List[Union[Point, MultiPoint, LineString, MultiLineString]], output_type: Literal["WKT", "GEOJSON"] = "GEOJSON") -> str:
+#def serialise_output_geometry(geometry_list: List[Union[Point, MultiPoint, LineString, MultiLineString]], output_type: Literal["WKT", "GEOJSON"] = "GEOJSON") -> str:
+def serialise_output_geometry(geometry_list: List[Union[Point, MultiPoint, LineString, MultiLineString]], output_type = "GEOJSON") -> str:
 	
 	# TODO: make the union operation optional for GeoJSON as it may produce weird results. expose setting to user?
 	PERFORM_UNION_ON_GEOMS_FOR_GEOJSON = True
