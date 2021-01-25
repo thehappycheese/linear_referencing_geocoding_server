@@ -1,10 +1,17 @@
+import itertools
 import math
 from typing import List
 from typing import Tuple
 
-from geom.Vector2 import Vector2
+from .geom.Vector2 import Vector2
 import matplotlib.pyplot as plt
 
+
+def pairwise(iterable):
+    """s -> (s0,s1), (s1,s2), (s2, s3), ..."""
+    a, b = itertools.tee(iterable)
+    next(b, None)
+    return zip(a, b)
 
 def clockwise(a: Vector2, b: Vector2, c: Vector2):
 	return (b - a).left.dot(c - a)
@@ -27,6 +34,11 @@ def segments_are_collinear(a1: Vector2, a2: Vector2, b1: Vector2, b2: Vector2):
 	return math.isclose(a1a2.y * t1, a1b1.y) and math.isclose(a1a2.y * t2, a1b2.y)
 
 
+def segments_are_overlapping(a_origin: Vector2, a_velocity: Vector2, b_origin: Vector2, b_velocity: Vector2):
+	
+	return False
+
+
 def solve_intersection(a_origin: Vector2, a_velocity: Vector2, b_origin: Vector2, b_velocity: Vector2):
 	time_b = (a_origin - b_origin).cross(a_velocity.unit) / b_velocity.cross(a_velocity.unit)
 	time_a = (b_origin - a_origin).cross(b_velocity.unit) / a_velocity.cross(b_velocity.unit)
@@ -41,23 +53,26 @@ def transpose_vector_list(inp: List[Vector2]):
 	return out
 
 
-def offset_linestring(inp: List[Vector2], offset: float) -> List[Vector2]:
-	untrimmed_step1: List[Tuple[Vector2, Vector2]] = []
+nPointString = List[Vector2]
+nSegmentString = List[Tuple[Vector2, Vector2]]
+
+
+def offset_segments(inp: nPointString, offset: float) -> Tuple[nSegmentString, nSegmentString]:
+	segments_positive: nSegmentString = []
+	segments_negative: nSegmentString = []
 	for a, b in zip(inp, inp[1:]):
 		offset_vector = (b - a).left.unit.scaled(offset)
-		a_o = a + offset_vector
-		b_o = b + offset_vector
-		plt.plot([a_o.x, b_o.x], [a_o.y, b_o.y], color="blue", marker="o")
-		untrimmed_step1.append((a_o, b_o))
-	print(untrimmed_step1)
-	untrimmed_step2: List[Vector2] = [untrimmed_step1[0][0]]
-	
-	for (a, b), (c, d) in zip(untrimmed_step1, untrimmed_step1[1:]):
+		segments_positive.append((a + offset_vector, b + offset_vector))
+		segments_negative.append((a - offset_vector, b - offset_vector))
+	return segments_positive, segments_negative
+
+def connect_offset_segments(inp:nSegmentString) -> nPointString:
+	# Algorithim 1
+	for (a, b), (c, d) in pairwise(inp):
 		ab = b - a
 		cd = d - c
 		
-		
-		if False:  # TODO: cover case where offset curves are 'overlapping' simply use b as the endpoint (and discard d?)
+		if segments_are_overlapping():  # TODO: cover case where offset curves are 'overlapping' simply use b as the endpoint (and discard d?)
 			# Case 1
 			untrimmed_step2.append(b)
 		else:
@@ -89,16 +104,25 @@ def offset_linestring(inp: List[Vector2], offset: float) -> List[Vector2]:
 				# Case 2c. (either ab or cd
 				untrimmed_step2.append(b)
 				untrimmed_step2.append(c)
-		
+	
 	untrimmed_step2.append(d)
 	return untrimmed_step2
+	
+
+
+def offset_linestring(inp: nPointString, offset: float) -> List[Vector2]:
+	untrimmed_step1_positive, untrimmed_step1_negative = offset_segments(inp, offset)
+	untrimmed_step2: List[Vector2] = [untrimmed_step1_positive[0][0]]
+	
+	
+
 
 ls = [
-	Vector2(0,3),
-	Vector2(0.9,0),
-	Vector2(1.5,2),
-	Vector2(2.1,0),
-	Vector2(3,3),
+	Vector2(0, 3),
+	Vector2(0.9, 0),
+	Vector2(1.5, 2),
+	Vector2(2.1, 0),
+	Vector2(3, 3),
 ]
 lso = offset_linestring(ls, 0.2)
 print(lso)
