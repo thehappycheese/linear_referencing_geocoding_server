@@ -3,7 +3,7 @@ import math
 from typing import List
 from typing import Tuple
 
-from .geom.Vector2 import Vector2
+from geom.Vector2 import Vector2
 import matplotlib.pyplot as plt
 
 
@@ -26,6 +26,13 @@ def pairwise(iterable):
 	a, b = itertools.tee(iterable)
 	next(b, None)
 	return zip(a, b)
+
+
+def grouper(iterable, n, fillvalue=None):
+	"""Collect data into fixed-length chunks or blocks"""
+	# grouper('ABCDEFG', 3, 'x') --> ABC DEF Gxx"
+	args = [iter(iterable)] * n
+	return itertools.zip_longest(*args, fillvalue=fillvalue)
 
 
 def clockwise(a: Vector2, b: Vector2, c: Vector2):
@@ -72,13 +79,13 @@ def transpose_vector_list(inp: List[Vector2]):
 	return out
 
 
-nPointString = List[Vector2]
-nSegmentString = List[Tuple[Vector2, Vector2]]
+Line = Tuple[Vector2, Vector2]
+LineString = List[Vector2]
 
 
-def offset_segments(inp: nPointString, offset: float) -> Tuple[nSegmentString, nSegmentString]:
-	segments_positive: nSegmentString = []
-	segments_negative: nSegmentString = []
+def offset_segments(inp: LineString, offset: float) -> Tuple[List[Line], List[Line]]:
+	segments_positive: List[Line] = []
+	segments_negative: List[Line] = []
 	for a, b in zip(inp, inp[1:]):
 		offset_vector = (b - a).left.unit.scaled(offset)
 		segments_positive.append((a + offset_vector, b + offset_vector))
@@ -86,9 +93,9 @@ def offset_segments(inp: nPointString, offset: float) -> Tuple[nSegmentString, n
 	return segments_positive, segments_negative
 
 
-def connect_offset_segments(inp: nSegmentString) -> nPointString:
+def connect_offset_segments(inp: List[Line]) -> LineString:
 	# Algorithm 1 - connect disjoint line segments by extension
-	result = inp[0][0]
+	result = [inp[0][0]]
 	for (a, b), (c, d) in pairwise(inp):
 		ab = b - a
 		cd = d - c
@@ -139,19 +146,74 @@ def connect_offset_segments(inp: nSegmentString) -> nPointString:
 	result.append(d)
 	return result
 
-def intersect_and_divide(intersect:nPointString, divide:nPointString):
-	output = []
-	for a,b in pairwise(divide):
-		for c,d in pairwise(intersect):
-			p,t1,t2 = solve_intersection(a,b-a,c,d-c)
-			if 0<=t1<=1 and 0<=t2<=1:
-			
 
-def offset_linestring(inp: nPointString, offset: float) -> List[Vector2]:
+def self_intersection(inp: LineString) -> Tuple[List[Vector2], List[float]]:
+	intersection_parameters = []
+	intersection_points = []
+	for i, (a, b) in enumerate(pairwise(inp)):
+		for j, (c, d) in enumerate(pairwise(inp[i + 2:])):
+			print(f"{i},{i + 1} against {j + i + 2},{j + i + 1 + 2}")
+			p, t1, t2 = solve_intersection(a, b - a, c, d - c)
+			if 0 <= t2 <= 1:
+				if math.isclose(t1, 0):
+					pass
+				elif math.isclose(t1, 1):
+					pass
+				elif 0 < t1 < 1 and 0 < t2 < 1:
+					param1 = i + t1
+					param2 = j + i + 2 + t2
+					#if param1 not in intersection_parameters and param2 not in intersection_parameters:  # TODO: this is a costly if statement
+					print((param1,param2))
+					intersection_parameters.append(i + t1)
+					intersection_parameters.append(j + i + 2 + t2)
+					intersection_points.append(p)
+	# todo: we may not need to accumulate the points.. they will need to be recalculated again in the future...
+	return intersection_points, intersection_parameters
+
+
+def split_at_parameters(inp: LineString, params: List[float]):
+	output: List[LineString] = []
+	accumulator: LineString = [inp[0]]
+	index = 0
+	last_cut_param = 0
+	for param in sorted(params):
+		while param > index + 1:
+			accumulator.append(inp[index+1])
+			index += 1
+
+		a = inp[index]
+		b = inp[index + 1]
+		# todo: if self_intersection could return a list of dictionaries,
+		#  or if this function was combined with that function...
+		#  we could eliminate the recalculation of the intersection point.
+		#  the only problem would be the sorting algorithim required would be a bit sill
+		cut_point = a + (b - a).scaled(param - index)
+		accumulator.append(cut_point)
+		output.append(accumulator)
+		accumulator = [cut_point]
+	
+	index += 1
+	
+	while index < len(inp):
+		accumulator.append(inp[index])
+		index += 1
+	
+	output.append(accumulator)
+	
+	return output
+
+
+def offset_linestring(inp: LineString, offset: float) -> LineString:
 	positive_seg, negative_seg = offset_segments(inp, offset)
 	positive = connect_offset_segments(positive_seg)
 	negative = connect_offset_segments(negative_seg)
-	
+
+
+def plot_LineString(ps: LineString, index_label=False, **kwargs):
+	plt.plot(*transpose_vector_list(ps), **kwargs)
+	if index_label:
+		for index, item in enumerate(ps):
+			plt.annotate(index, item)
 
 
 # ls = [
@@ -164,12 +226,37 @@ def offset_linestring(inp: nPointString, offset: float) -> List[Vector2]:
 # lso = offset_linestring(ls, 0.2)
 # print(lso)
 #
-# plt.plot(*transpose_vector_list(ls), "r")
-# plt.plot(*transpose_vector_list(lso), "g")
-# plt.show()
-print(are_parallel(
-	Vector2(0, 0),
-	Vector2(1, 1),
-	Vector2(1, 1),
-	Vector2(-2, -2)
-))
+
+ls = [
+	Vector2(7.38, 14.47),
+	Vector2(21.37, 1.99),
+	Vector2(23.64, 23.35),
+	Vector2(15.32, 18.43),
+	Vector2(31.01, 11.82),
+	Vector2(0.58, 0.86)
+]
+
+ls = [
+	Vector2(43.30, 19.69),
+	Vector2(59.60, 4.99),
+	Vector2(68.69, 25.83),
+	Vector2(50.78, 30.38),
+	Vector2(59.60, 4.99),
+	Vector2(73.50, 3.11)
+]
+
+int_points, int_params = self_intersection(ls)
+print(int_params)
+print(int_points)
+plot_LineString(ls, True, color="r")
+
+# fig, ax = plt.subplots()
+plt.scatter(*transpose_vector_list(int_points))
+for point, param in zip(int_points, grouper(int_params, 2)):
+	plt.annotate(f'   {param[0]:.2f},{param[1]:.2f}', point)
+
+split_lines = split_at_parameters(ls, int_params)
+print(split_lines)
+plot_LineString(split_lines[2], False, color="g")
+
+plt.show()

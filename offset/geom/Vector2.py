@@ -87,3 +87,7 @@ class Vector2:
 	
 	def __pos__(self):
 		return self
+	
+	def __iter__(self):
+		yield self._x
+		yield self._y
