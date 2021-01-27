@@ -97,5 +97,5 @@ class Slice_Network_Exception(Exception):
 
 
 if __name__ == '__main__':
-	# app.run(host='0.0.0.0', port=8001)
-	waitress_serve(app, host='0.0.0.0', port=8001)
+	app.run(host='0.0.0.0', port=8002)
+	# waitress_serve(app, host='0.0.0.0', port=8002)
