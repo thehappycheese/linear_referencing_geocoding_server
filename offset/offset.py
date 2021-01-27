@@ -1,6 +1,7 @@
 import itertools
 import math
 from typing import List
+from typing import Optional
 from typing import Tuple
 
 from geom.Vector2 import Vector2
@@ -65,10 +66,66 @@ def segments_are_overlapping(a: Vector2, b: Vector2, c: Vector2):
 	return False
 
 
-def solve_intersection(a_origin: Vector2, a_velocity: Vector2, b_origin: Vector2, b_velocity: Vector2):
-	time_b = (a_origin - b_origin).cross(a_velocity.unit) / b_velocity.cross(a_velocity.unit)
-	time_a = (b_origin - a_origin).cross(b_velocity.unit) / a_velocity.cross(b_velocity.unit)
-	return b_origin + b_velocity.scaled(time_b), time_a, time_b
+def solve_intersection(a: Vector2, b: Vector2, c: Vector2, d: Vector2) -> Optional[Tuple[Vector2, float, float]]:
+	# computes the intersection between two line segments; a to b, and c to d
+	
+	ab = b - a
+	cd = d - c
+	# t1 and t2 are scalars where 0<=t1<=1 and 0<=t2<=1
+	
+	# The segments are expressed as a parametric equation where t1 and t2 are unknown:
+	# a + ab·t1 = c + cd·t2
+	
+	# This can be rearranged in matrix form
+	# [ab_x cd_x][t1] = [ac_x]
+	# [ab_y cd_y][t2]   [ac_y]
+	# or
+	# M·T=ac
+	
+	# the determinant is the inverse of the cross product of ab and cd.
+	# 1/(ab×cd)
+	# Therefore if ab×cd=0 the determinant is undefined and the matrix cannot be inverted
+	# This means the lines are parallel and **possibly** collinear
+	
+	# pre-multiplying both sides by the inverted 2x2 matrix we get:
+	# [t1] = 1/(ab×cd)·[ cd_y -cd_x][ac_x]
+	# [t2]             [-ab_y  ab_x][ac_y]
+	# or
+	# T = M⁻¹·ac
+	
+	# multiplied out
+	# [t1] = 1/(ab_x·cd_y - ab_y·cd_x)·[ cd_y·ac_x - cd_x·ac_y]
+	# [t2]                             [-ab_y·ac_x + ab_x·ac_y]
+	
+	# since it is neat to write cross products in python code, observe that the above is equivalent to:
+	# [t1] = [ ac×cd / ab×cd ]
+	# [t2] = [ ab×ac / ab×cd ]
+	
+	ab_cross_cd = ab.cross(cd)
+	
+	if ab_cross_cd == 0:
+		
+		# vectors are not linearly independent; ab and cd are parallel
+		# segments are collinear if ac is parallel to ab
+		# ac ∥ ab
+		# or more conveniently if ac is perpendicular to the left normal of ab
+		# ac ⟂ (ab⟂)
+		# the left normal of ab = [-ab_y]
+		#                         [ ab_x]
+		# dot product of perpendicular vectors is zero:
+		# if ab.left.dot(ac) == 0:
+		# 	# segments are collinear
+		# 	# TODO: we can compute the range over which t1 and t2 produce an overlap, if any, here. Doesnt seem to be needed for now.
+		# else:
+		# 	# segments are parallel
+		# 	return None
+		
+		return None
+	else:
+		ac = c - a
+		time_1 = ac.cross(cd) / ab_cross_cd
+		time_2 = -ab.cross(ac) / ab_cross_cd
+		return a + ab.scaled(time_1), time_1, time_2
 
 
 def transpose_vector_list(inp: List[Vector2]):
@@ -95,6 +152,8 @@ def offset_segments(inp: LineString, offset: float) -> Tuple[List[Line], List[Li
 
 def connect_offset_segments(inp: List[Line]) -> LineString:
 	# Algorithm 1 - connect disjoint line segments by extension
+	if len(inp) == 1:
+		return [*inp[0]]
 	result = [inp[0][0]]
 	for (a, b), (c, d) in pairwise(inp):
 		ab = b - a
@@ -111,7 +170,7 @@ def connect_offset_segments(inp: List[Line]) -> LineString:
 			# p = a + t_ab*ab
 			# p = c + t_cd*cd
 			# note that t_ab and t_cd are between 0 and 1 when p lies within their respective line segments.
-			p, t_ab, t_cd = solve_intersection(a, ab, c, cd)
+			p, t_ab, t_cd = solve_intersection(a, b, c, d)
 			
 			# TIP means 'true intersection point' : ie. the intersection point lies within the segment.
 			# FIP means 'false intersection point' : ie the intersection point lies outside the segment.
@@ -147,28 +206,55 @@ def connect_offset_segments(inp: List[Line]) -> LineString:
 	return result
 
 
-def self_intersection(inp: LineString) -> Tuple[List[Vector2], List[float]]:
+def self_intersection(inp: LineString) -> List[float]:
 	intersection_parameters = []
-	intersection_points = []
 	for i, (a, b) in enumerate(pairwise(inp)):
 		for j, (c, d) in enumerate(pairwise(inp[i + 2:])):
 			print(f"{i},{i + 1} against {j + i + 2},{j + i + 1 + 2}")
-			p, t1, t2 = solve_intersection(a, b - a, c, d - c)
-			if 0 <= t2 <= 1:
-				if math.isclose(t1, 0):
-					pass
-				elif math.isclose(t1, 1):
-					pass
-				elif 0 < t1 < 1 and 0 < t2 < 1:
-					param1 = i + t1
-					param2 = j + i + 2 + t2
-					#if param1 not in intersection_parameters and param2 not in intersection_parameters:  # TODO: this is a costly if statement
-					print((param1,param2))
-					intersection_parameters.append(i + t1)
-					intersection_parameters.append(j + i + 2 + t2)
-					intersection_points.append(p)
-	# todo: we may not need to accumulate the points.. they will need to be recalculated again in the future...
-	return intersection_points, intersection_parameters
+			intersection_result = solve_intersection(a, b, c, d)
+			if intersection_result is not None:
+				# TODO: collect p to prevent recalculation?
+				p, t1, t2 = intersection_result
+				if 0 <= t1 <= 1 and 0 <= t2 <= 1:
+					param_1 = i + t1
+					param_2 = j + i + 2 + t2
+					print((param_1, param_2))
+					intersection_parameters.append(param_1)
+					intersection_parameters.append(param_2)
+	last_item = float("inf")
+	output = []
+	for item in sorted(intersection_parameters):
+		if not math.isclose(last_item, item):
+			output.append(item)
+			last_item = item
+	
+	return output
+
+
+def intersection(target: LineString, tool: LineString) -> List[float]:
+	"""will return a list of parameters for the target where the tool intersects the target."""
+	intersection_parameters = []
+	for i, (a, b) in enumerate(pairwise(target)):
+		for j, (c, d) in enumerate(pairwise(tool)):
+			print(f"{i},{i + 1} against {j + i + 2},{j + i + 1 + 2}")
+			intersection_result = solve_intersection(a, b, c, d)
+			if intersection_result is not None:
+				# TODO: collect p to prevent recalculation?
+				p, t1, t2 = intersection_result
+				if 0 <= t1 <= 1 and 0 <= t2 <= 1:
+					param_1 = i + t1
+					
+					print(param_1)
+					intersection_parameters.append(param_1)
+	
+	last_item = float("inf")
+	output = []
+	for item in sorted(intersection_parameters):
+		if not math.isclose(last_item, item):
+			output.append(item)
+			last_item = item
+	
+	return output
 
 
 def split_at_parameters(inp: LineString, params: List[float]):
@@ -176,21 +262,22 @@ def split_at_parameters(inp: LineString, params: List[float]):
 	accumulator: LineString = [inp[0]]
 	index = 0
 	last_cut_param = 0
-	for param in sorted(params):
+	for param in params:
+		
 		while param > index + 1:
-			accumulator.append(inp[index+1])
+			accumulator.append(inp[index + 1])
 			index += 1
-
+		
 		a = inp[index]
 		b = inp[index + 1]
-		# todo: if self_intersection could return a list of dictionaries,
-		#  or if this function was combined with that function...
-		#  we could eliminate the recalculation of the intersection point.
-		#  the only problem would be the sorting algorithim required would be a bit sill
+		
 		cut_point = a + (b - a).scaled(param - index)
 		accumulator.append(cut_point)
 		output.append(accumulator)
-		accumulator = [cut_point]
+		if math.isclose(param - index, 1):
+			accumulator = []
+		else:
+			accumulator = [cut_point]
 	
 	index += 1
 	
@@ -200,6 +287,15 @@ def split_at_parameters(inp: LineString, params: List[float]):
 	
 	output.append(accumulator)
 	
+	return output
+
+
+def params_to_points(inp: LineString, params: List[float]):
+	output = []
+	for param in params:
+		a = inp[math.floor(param)]
+		b = inp[math.ceil(param)]
+		output.append(a + (b - a).scaled(param % 1))
 	return output
 
 
@@ -216,24 +312,34 @@ def plot_LineString(ps: LineString, index_label=False, **kwargs):
 			plt.annotate(index, item)
 
 
-# ls = [
-# 	Vector2(0, 3),
-# 	Vector2(0.9, 0),
-# 	Vector2(1.5, 2),
-# 	Vector2(2.1, 0),
-# 	Vector2(3, 3),
-# ]
-# lso = offset_linestring(ls, 0.2)
-# print(lso)
-#
+non_intersecting_parallel = [
+	Vector2(60.67, 44.89),
+	Vector2(76.35, 44.89),
+	Vector2(76.35, 33.17),
+	Vector2(88.64, 33.17),
+	Vector2(88.64, 44.89),
+	Vector2(103.75, 44.89),
+	Vector2(103.75, 60.20),
+	Vector2(83.53, 60.20),
+	Vector2(83.53, 23.53)
+]
 
-ls = [
-	Vector2(7.38, 14.47),
-	Vector2(21.37, 1.99),
-	Vector2(23.64, 23.35),
-	Vector2(15.32, 18.43),
-	Vector2(31.01, 11.82),
-	Vector2(0.58, 0.86)
+mid_touch_vertex = [
+	Vector2(34.87, 61.50),
+	Vector2(27.54, 67.34),
+	Vector2(46.87, 61.90),
+	Vector2(31.75, 58.12),
+	Vector2(24.76, 73.43),
+	Vector2(33.45, 79.85)
+]
+
+corner_touch_corner = [
+	Vector2(37.26, 89.36),
+	Vector2(24.76, 103.29),
+	Vector2(46.87, 91.76),
+	Vector2(31.75, 87.98),
+	Vector2(24.76, 103.29),
+	Vector2(33.45, 109.71)
 ]
 
 ls = [
@@ -245,18 +351,62 @@ ls = [
 	Vector2(73.50, 3.11)
 ]
 
-int_points, int_params = self_intersection(ls)
-print(int_params)
-print(int_points)
-plot_LineString(ls, True, color="r")
+intersectors = [
+	[
+		Vector2(45.37, 4.61),
+		Vector2(53.85, 19.50),
+		Vector2(56.33, 19.70),
+		Vector2(61.70, 5.03)
+	],
+	[
+		Vector2(49.71, 27.97),
+		Vector2(52.61, 11.23),
+		Vector2(55.50, 11.85),
+		Vector2(62.32, 26.94)
+	]
+]
 
-# fig, ax = plt.subplots()
-plt.scatter(*transpose_vector_list(int_points))
-for point, param in zip(int_points, grouper(int_params, 2)):
-	plt.annotate(f'   {param[0]:.2f},{param[1]:.2f}', point)
+squig = [
+	Vector2(56.74, 112.31),
+	Vector2(56.12, 109),
+	Vector2(56.74, 106.52),
+	Vector2(59.43, 104.04),
+	Vector2(64.60, 105.90),
+	Vector2(68.73, 110.65),
+	Vector2(73.90, 112.31),
+	Vector2(79.69, 108.79),
+	Vector2(82.58, 101.97),
+	Vector2(80.93, 92.05),
+	Vector2(73.48, 82.34),
+	Vector2(70.80, 69.31),
+	Vector2(78.03, 58.98),
+	Vector2(94.57, 64.77),
+	Vector2(99.12, 75.10),
+	Vector2(90.02, 78.62),
+	Vector2(88.37, 76.13),
+	Vector2(90.64, 69.93)
+]
 
-split_lines = split_at_parameters(ls, int_params)
-print(split_lines)
-plot_LineString(split_lines[2], False, color="g")
 
+
+
+
+plot_LineString(squig, True, color="r")
+offsets = [connect_offset_segments(item) for item in offset_segments(squig, 3)]
+for offset_c in offsets:
+	plot_LineString(offset_c, True, color="g")
+
+# int_params = self_intersection(offsets[0])
+# print(int_params)
+# int_points = params_to_points(intersectors[0], int_params)
+#
+# # fig, ax = plt.subplots()
+# plt.scatter(*transpose_vector_list(int_points))
+# for point, param in zip(int_points, grouper(int_params, 2)):
+# 	plt.annotate(f'   {param[0]:.2f},{param[1]:.2f}', point)
+
+# split_lines = split_at_parameters(corner_touch_corner, int_params)
+# print(split_lines)
+# for index, item in enumerate(split_lines):
+# 	plot_LineString(connect_offset_segments(offset_segments(item, 0.1 + index / 2)[0]), False, color="g")
 plt.show()

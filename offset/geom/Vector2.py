@@ -34,15 +34,17 @@ class Vector2:
 	def scaled(self, scale_factor: float):
 		return Vector2(self._x * scale_factor, self._y * scale_factor)
 	
-	def len_squared(self):
+	@property
+	def magnitude_squared(self):
 		return self._x * self._x + self._y * self._y
 	
-	def len(self):
+	@property
+	def magnitude(self):
 		return sqrt(self._x * self._x + self._y * self._y)
 	
 	@property
 	def unit(self):
-		ll = self.len()
+		ll = self.magnitude
 		if ll == 0:
 			# what the user wants to happen here depends on the application; Return None? Return some default unit vector?
 			# Here we simply hot-potato the problem by returning a zero length vector
