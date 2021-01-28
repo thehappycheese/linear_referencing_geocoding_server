@@ -71,35 +71,43 @@ def solve_intersection(a: Vector2, b: Vector2, c: Vector2, d: Vector2) -> Option
 	
 	ab = b - a
 	cd = d - c
-	# t1 and t2 are scalars where 0<=t1<=1 and 0<=t2<=1
 	
-	# The segments are expressed as a parametric equation where t1 and t2 are unknown:
+	# The intersection of segments is expressed as a parametric equation
+	# where t1 and t2 are unknown scalars
+	# note that a real intersection can only happen when 0<=t1<=1 and 0<=t2<=1,
 	# a + ab·t1 = c + cd·t2
 	
-	# This can be rearranged in matrix form
-	# [ab_x cd_x][t1] = [ac_x]
-	# [ab_y cd_y][t2]   [ac_y]
-	# or
-	# M·T=ac
+	# This can be rearranged as follows:
+	# ab·t1 - cd·t2 = c - a
 	
-	# the determinant is the inverse of the cross product of ab and cd.
+	# by collecting the scalars t1 and -t2 into the column vector T,
+	# and by collecting the vectors ab and cd into matrix M:
+	# we get the matrix form:
+	# [ab_x  cd_x][ t1] = [ac_x]
+	# [ab_y  cd_y][-t2]   [ac_y]
+	# or
+	# M·t=ac
+	
+	# the determinant of the matrix M is the inverse of the cross product of ab and cd.
 	# 1/(ab×cd)
 	# Therefore if ab×cd=0 the determinant is undefined and the matrix cannot be inverted
-	# This means the lines are parallel and **possibly** collinear
+	# This means the lines are
+	#   a) parallel and
+	#   b) possibly collinear
 	
 	# pre-multiplying both sides by the inverted 2x2 matrix we get:
-	# [t1] = 1/(ab×cd)·[ cd_y -cd_x][ac_x]
-	# [t2]             [-ab_y  ab_x][ac_y]
+	# [ t1] = 1/(ab×cd)·[ cd_y  -cd_x][ac_x]
+	# [-t2]             [-ab_y   ab_x][ac_y]
 	# or
-	# T = M⁻¹·ac
+	# t = M⁻¹·ac
 	
 	# multiplied out
-	# [t1] = 1/(ab_x·cd_y - ab_y·cd_x)·[ cd_y·ac_x - cd_x·ac_y]
-	# [t2]                             [-ab_y·ac_x + ab_x·ac_y]
+	# [ t1] = 1/(ab_x·cd_y - ab_y·cd_x)·[ cd_y·ac_x - cd_x·ac_y]
+	# [-t2]                             [-ab_y·ac_x + ab_x·ac_y]
 	
 	# since it is neat to write cross products in python code, observe that the above is equivalent to:
-	# [t1] = [ ac×cd / ab×cd ]
-	# [t2] = [ ab×ac / ab×cd ]
+	# [ t1] = [ ac×cd / ab×cd ]
+	# [-t2] = [ ab×ac / ab×cd ]
 	
 	ab_cross_cd = ab.cross(cd)
 	
@@ -123,9 +131,9 @@ def solve_intersection(a: Vector2, b: Vector2, c: Vector2, d: Vector2) -> Option
 		return None
 	else:
 		ac = c - a
-		time_1 = ac.cross(cd) / ab_cross_cd
-		time_2 = -ab.cross(ac) / ab_cross_cd
-		return a + ab.scaled(time_1), time_1, time_2
+		t1 = ac.cross(cd) / ab_cross_cd
+		t2 = -ab.cross(ac) / ab_cross_cd
+		return a + ab.scaled(t1), t1, t2
 
 
 def transpose_vector_list(inp: List[Vector2]):

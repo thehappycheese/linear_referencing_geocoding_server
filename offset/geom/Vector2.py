@@ -1,17 +1,8 @@
 from __future__ import annotations
 from math import sqrt
-from typing import List
 
 
 class Vector2:
-	"""immutable Vector2
-
-	In previous code I used a mutable Vector2 class which meant that updating properties like this; Layer.position_mm.x = 10.
-	Meant that it was hard for the Layer class to know when its own position was changed.
-
-	By using immutable Vector2 we are forced to do something like; Layer.position_mm += iVector2(10,0)
-	This way the Layer class can use getter and setter methods to know when its position has changed.
-	"""
 	
 	def __init__(self, x: float, y: float):
 		self._x = float(x)
@@ -71,8 +62,6 @@ class Vector2:
 		return f"{self._x:.5f}".rstrip("0").rstrip(".") + f" {self._y:.5f}".rstrip("0").rstrip(".")
 	
 	def __add__(self, other):
-		if type(other) is float or type(other) is int:
-			return Vector2(self.x + other, self.y + other)
 		return Vector2(self.x + other.x, self.y + other.y)
 	
 	def __sub__(self, other: Vector2) -> Vector2:
