@@ -26,7 +26,6 @@ app = Flask(__name__)
 #	layer="NTWK_IRIS_Road_Network_20201029"
 #)
 
-
 @app.route('/secrets/')
 def route_handle_get_secrets():
 	try:
@@ -58,7 +57,7 @@ def route_handle_get():
 		dm = Data_Manager()
 		dm.load_registry()
 	except:
-		return Response("Unable to loade the data manager", status=500)
+		return Response("Server is still booting please try again.", status=500)
 
 	try:
 		slice_results: List[Union[Point, LineString]] = []
@@ -97,5 +96,5 @@ class Slice_Network_Exception(Exception):
 
 
 if __name__ == '__main__':
-	app.run(host='0.0.0.0', port=8002)
-	# waitress_serve(app, host='0.0.0.0', port=8002)
+	# app.run(host='0.0.0.0', port=8002)
+	waitress_serve(app, host='0.0.0.0', port=8002)

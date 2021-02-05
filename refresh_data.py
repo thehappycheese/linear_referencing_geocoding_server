@@ -1,4 +1,3 @@
-from data_management.data_manager import Data_Manager
+from data_management import refresh_sql_data as rsd
 
-dm = Data_Manager()
-dm.refresh_data()
+

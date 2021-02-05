@@ -1,6 +1,7 @@
 import json
 from collections import OrderedDict
 from typing import Dict, List
+from datetime import datetime
 
 import requests
 import re
@@ -60,6 +61,13 @@ class Data_Manager:
 	def __init__(self):
 		self.loaded_chunks: OrderedDict[str, geopandas.GeoDataFrame] = OrderedDict()
 		self.loaded_chunk_size = 0
+
+	@property
+	def needs_update(self):
+		try:
+			return (datetime.now() - datetime.fromisoformat(self.registry["DATE_REFRESHED"])).days>30
+		except ValueError:
+			return True
 	
 	def refresh_data(self):
 		
@@ -84,74 +92,11 @@ class Data_Manager:
 					"features": chunk
 				}).encode("utf-8"))
 			
-			new_registry[output_filename] = (chunk[0]['properties']['ROAD'], chunk[-1]['properties']['ROAD'])
-		print(new_registry)
-		
+			new_registry[output_filename] = (chunk[0]['properties']['ROAD'], chunk[-1]['properties']['ROAD'])		
+		new_registry["DATE_REFRESHED"] = datetime.now().isoformat()
 		with lz4.frame.open("data/reg.json.lz4", mode="wb") as lz4_file:
 			lz4_file.write(json.dumps(new_registry).encode("utf-8"))
 		self.registry = new_registry
-	
-	# return
-	# iter_count = 0
-	# buffer = ""
-	#
-	# state = "trim_preamble"
-	#
-	# current_roads_in_file = []
-	# current_file_length = 0
-	# current_road = None
-	# current_features = []
-	#
-	# new_registry = {}
-	#
-	# file_count = 0
-	#
-	# for chunk_bytes in request.iter_content(chunk_size=8192):
-	# 	buffer += chunk_bytes.decode("utf-8")
-	# 	if state == "trim_preamble":
-	# 		preamble, buffer = parse(buffer, re_preamble)
-	# 		if preamble is not None:
-	# 			state = "parse_features"
-	#
-	# 	if state == "parse_features":
-	# 		while True:
-	# 			feature_string, buffer = parse(buffer, re_feature)
-	# 			if feature_string is None:
-	# 				break
-	# 			current_file_length += len(feature_string)
-	# 			feature = strip_feature(json.loads(feature_string))
-	# 			if feature["properties"]["ROAD"] != current_road:
-	# 				if current_road is None:
-	# 					current_road = feature["properties"]["ROAD"]
-	# 				else:
-	# 					if current_file_length > 5_000_000:
-	# 						print(f"write out {len(current_features)} features with size of {current_file_length} and roads {', '.join(current_roads_in_file)}")
-	# 						output_filename = f"{file_count}.json.lz4"
-	# 						with lz4.frame.open("data/" + output_filename, mode="wb") as lz4_file:
-	# 							lz4_file.write(json.dumps({
-	# 								"type":     "FeatureCollection",
-	# 								"crs":      {"type": "name", "properties": {"name": "urn:ogc:def:crs:OGC:1.3:CRS84"}},
-	# 								"features": current_features
-	# 							}).encode("utf-8"))
-	#
-	# 						new_registry[output_filename] = current_roads_in_file
-	#
-	# 						file_count += 1
-	# 						current_road = feature["properties"]["ROAD"]
-	# 						current_roads_in_file = []
-	# 						current_features = []
-	# 						current_file_length = 0
-	#
-	# 				current_roads_in_file.append(feature["properties"]["ROAD"])
-	#
-	# 			current_features.append(feature)
-	#
-	# 		iter_count += 1
-	# request.close()
-	#
-	# with lz4.frame.open("data/reg.json.lz4", mode="wb") as lz4_file:
-	# 	lz4_file.write(json.dumps(new_registry).encode("utf-8"))
-	# self.registry = new_registry
 	
 	def load_registry(self):
 		try:
@@ -236,5 +181,3 @@ def test():
 	print(fetched)
 	
 	print(dm.loaded_chunks.keys())
-
-test()
