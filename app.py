@@ -1,30 +1,30 @@
 from __future__ import annotations
 
+# Python Standard Library
 import os
 import sys
+import sqlite3
 from typing import List, Union  # , Literal
 
-import geopandas as gpd
+# External Libraries that rely on pre-compiled binaries
 from flask import Flask, request, send_file, Response
-from geopandas import GeoDataFrame
-from shapely.geometry import LineString, Point
+# os.environ["FLASK_ENV"] = "development"  # This next line would disable the warning when the built-in flask server is started on the local machine:
 from waitress import serve as waitress_serve
 
-# This next line would disable the warning when the built-in flask server is started on the local machine:
-# os.environ["FLASK_ENV"] = "development"
-from data_management.data_manager import Data_Manager
-from data_management.map_cway import MAP_CWAY_REQUEST_TO_MASK
+# Local Libraries
+from data_management.map_cway import MAP_CWAY_REQUEST_TO_MASK, MAP_INT_TO_CWAY_STRING
+
 from util.parse_request_parameters import parse_request_parameters, URL_Parameter_Parse_Exception
 from util.sample_linestring import sample_linestring
 from util.serialise_output_geometry import serialise_output_geometry, Serialise_Results_Exception
 
+from parse_wkb.wkb_to_geojson import wkb_to_geojson
+
 app = Flask(__name__)
 
-import sqlite3
-import timeit
 
-conn = sqlite3.connect("./data/database.sqlite")
-cur = conn.cursor()
+def unpack_record(START_SLK, END_SLK, CWY, GEOM):
+	return START_SLK, END_SLK, MAP_INT_TO_CWAY_STRING[CWY], wkb_to_geojson(GEOM)[0]["coordinates"]
 
 
 @app.route('/secrets/')
@@ -54,34 +54,29 @@ def route_handle_get():
 	except Exception:
 		return Response("error: Unknown server error while trying to parse URL parameters.", status=500)
 	
-	conn = sqlite3.connect("./data/database.sqlite")
-	cur = conn.cursor()
-	for slice_request in slice_requests:
-		cur.execute("""
-			SELECT * FROM Road_Network WHERE ROAD=? AND (CWY & ?) != 0 AND END_SLK>=? AND START_SLK<=?;
-		""", (slice_request.road, MAP_CWAY_REQUEST_TO_MASK[slice_request.cway], slice_request.slk_from, slice_request.slk_to))
-		road_segment_records = [*cur]
-		print(f"requesting {(slice_request.road, MAP_CWAY_REQUEST_TO_MASK[slice_request.cway], slice_request.slk_from, slice_request.slk_to)}")
-		print(road_segment_records)
-	
 	try:
-		dm = Data_Manager()
-		dm.load_registry()
+		conn = sqlite3.connect("./data/database.sqlite")
+		cur = conn.cursor()
 	except:
-		return Response("Server is still booting please try again.", status=500)
+		return Response("Server failed to connect to database.", status=500)
 	
 	try:
-		slice_results: List[Union[Point, LineString]] = []
+		slice_results = []
 		for slice_request in slice_requests:
-			road_segment_rows = dm.fetch_filter(slice_request.road, slice_request.slk_from, slice_request.slk_to, slice_request.cway)
+			cur.execute("""
+				SELECT START_SLK, END_SLK, CWY, GEOM FROM Road_Network WHERE ROAD=? AND (CWY & ?) != 0 AND END_SLK>=? AND START_SLK<=?;
+			""", (slice_request.road, MAP_CWAY_REQUEST_TO_MASK[slice_request.cway], slice_request.slk_from, slice_request.slk_to))
+			road_segments = [unpack_record(*item) for item in cur]
+			print(road_segments)
 			slice_results.extend(
 				sample_linestring(
-					road_segment_rows,
+					road_segments,
 					slk_cut_first=slice_request.slk_from,
 					slk_cut_second=slice_request.slk_to,
 					offset_metres=slice_request.offset
 				)
 			)
+
 		if len(slice_results) == 0:
 			raise Slice_Network_Exception("Valid user parameters produced no resulting geometry. Are the SLK bounds within the extent of the road?")
 		

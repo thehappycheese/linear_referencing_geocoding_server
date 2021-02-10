@@ -18,7 +18,7 @@ import geopandas
 # { "type": "Feature", "properties": { "OBJECTID": 128965992, "ROAD": "X001", "ROAD_NAME": "High Wide Load Oversize Cross Over (Restricted Access) (H018 to Military Rd)", "COMMON_USAGE_NAME": "High Wide Load Oversize Cross Over (Restricted Access) (H018 N of Bushmead Rd)", "START_SLK": 0.0, "END_SLK": 0.03, "CWY": "Single", "START_TRUE_DIST": 0.0, "END_TRUE_DIST": 0.03, "NETWORK_TYPE": "Crossover", "RA_NO": "07", "RA_NAME": "Metropolitan", "LG_NO": "106", "LG_NAME": "Mundaring", "START_NODE_NO": "159483", "START_NODE_NAME": "Roe Hwy", "END_NODE_NO": "159484", "END_NODE_NAME": "Roe Hwy", "DATUM_NE_ID": 268144340, "NM_BEGIN_MP": 0, "NM_END_MP": 30, "NETWORK_ELEMENT": "X001\/1-S", "ROUTE_NE_ID": 268144339, "GEOLOCSTLength": 0.00029295128658892664 }, "geometry": { "type": "LineString", "coordinates": [ [ 116.016386821440108, -31.908495094549608 ], [ 116.016275005352838, -31.90857095014394 ], [ 116.016133725452107, -31.908641315586749 ] ] } },
 import shapely
 
-from data_management.delete_folder_content import delete_folder_content
+from data_management.make_folder_or_delete_folder_content import make_folder_or_delete_folder_content
 
 re_preamble = re.compile(r"^({\s*\"type\"\s*:\s*\"FeatureCollection\".*?features\"\s*:\s*\[\s*)(.*?)$", flags=re.DOTALL)
 re_feature = re.compile(r"^(\s*{\s*\"type\"\s*:\s*\"Feature\".*?}\s*}\s*),(.*?)$", flags=re.DOTALL)
@@ -71,7 +71,7 @@ class Data_Manager:
 	
 	def refresh_data(self):
 		
-		delete_folder_content("data/")
+		make_folder_or_delete_folder_content("data/")
 		
 		request = requests.get("http://portal-mainroads.opendata.arcgis.com/datasets/082e88d12c894956945ef5bcee0b39e2_17.geojson")
 		#request = requests.get("http://localhost:8005/Road_Network.geojson")

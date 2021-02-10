@@ -1,8 +1,15 @@
 import os
 import shutil
+import errno
 
 
-def delete_folder_content(folder):
+def make_folder_or_delete_folder_content(folder):
+	import os
+	try:
+		os.makedirs('my_folder')
+	except OSError as e:
+		if e.errno != errno.EEXIST:
+			raise
 	"""deletes all files)"""
 	for filename in os.listdir(folder):
 		file_path = os.path.join(folder, filename)

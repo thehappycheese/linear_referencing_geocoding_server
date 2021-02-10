@@ -1,16 +1,21 @@
 # this is intended to run in a separate process to the main flask server such that after the refresh the
 # memory allocated is released back to the system
+
+# Python Standard Library
 import sqlite3
 
+# External Libraries that rely on pre-compiled binaries
 import requests
 
-from data_management.delete_folder_content import delete_folder_content
+# Local libraries and submodules
+from data_management.make_folder_or_delete_folder_content import make_folder_or_delete_folder_content
 from data_management.map_cway import MAP_CWAY_TO_INT
 from parse_wkb import geojson_to_wkb
 
-import timeit
+print("refreshing data")
 
-delete_folder_content("./data/")
+make_folder_or_delete_folder_content("./data/")
+
 conn = sqlite3.connect("./data/database.sqlite")
 cur = conn.cursor()
 cur.execute("""DROP TABLE IF EXISTS Road_Network""")
@@ -56,6 +61,9 @@ def split_by_geom_size(features, num_points):
 
 
 for num, chunk in enumerate(split_by_geom_size(features, 20_000)):
+	for item in chunk:
+		if item["geometry"]["type"] != "LineString":
+			raise Exception(f"Only LineString feature types are permitted in input data!, found {item['geometry']['type']}")
 	print('.', end='')
 	cur.executemany("""
 			INSERT INTO Road_Network (ROAD, START_SLK, END_SLK, CWY, GEOM)

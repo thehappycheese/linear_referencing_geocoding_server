@@ -4,7 +4,7 @@ MAP_CWAY_TO_INT = {
 	'Right':  0b0100
 }
 
-MAP_INT_TO_CWAY = {
+MAP_INT_TO_CWAY_STRING = {
 	0b0001: 'Left',
 	0b0010: 'Single',
 	0b0100: 'Right'

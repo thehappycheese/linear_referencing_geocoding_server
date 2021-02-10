@@ -1,4 +1,5 @@
 import math
+from typing import Sequence
 
 from shapely.geometry import LineString, Point
 
@@ -8,7 +9,7 @@ from util.convert_metres_to_degrees import convert_metres_to_degrees
 OFFSET_BY_INSTANTANEOUS_DIRECTION = True
 
 
-def get_point_along_linestring_with_offset(line_string: LineString, linestring_slk_start: float, linestring_slk_end: float, slk_cut: float, offset_metres: float = 0) -> Point:
+def get_point_along_linestring_with_offset(line_string: Sequence[Sequence[float]], linestring_slk_start: float, linestring_slk_end: float, slk_cut: float, offset_metres: float = 0) -> Point:
 	distance_along_linestring_normalised = (slk_cut - linestring_slk_start) / (linestring_slk_end - linestring_slk_start)
 	
 	if offset_metres == 0:
