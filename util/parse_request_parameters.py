@@ -89,6 +89,6 @@ def parse_request_parameters(request: Request) -> List[Slice_Request_Args]:
 	if len(unsorted_request_carriageway) != len(request_roads):
 		raise URL_Parameter_Parse_Exception(f"error: optional parameter 'cway={raw_request_carriageway}' list must be the same length as the 'road' parameter. {ERROR_SUGGEST_CORRECT_ADVANCED}") from None
 	
-	request_carriageway: List[str] = [''.join(sorted(item.upper())) if item != "" else "LRS" for item in unsorted_request_carriageway]
+	sorted_request_carriageway: List[str] = [''.join(sorted(item.upper())) if item != "" else "LRS" for item in unsorted_request_carriageway]
 	
-	return [Slice_Request_Args(*item) for item in zip(request_roads, request_slk_from, request_slk_to, request_offset, request_carriageway)]
+	return [Slice_Request_Args(*item) for item in zip(request_roads, request_slk_from, request_slk_to, request_offset, sorted_request_carriageway)]

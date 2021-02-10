@@ -13,18 +13,19 @@ from waitress import serve as waitress_serve
 # This next line would disable the warning when the built-in flask server is started on the local machine:
 # os.environ["FLASK_ENV"] = "development"
 from data_management.data_manager import Data_Manager
+from data_management.map_cway import MAP_CWAY_REQUEST_TO_MASK
 from util.parse_request_parameters import parse_request_parameters, URL_Parameter_Parse_Exception
 from util.sample_linestring import sample_linestring
 from util.serialise_output_geometry import serialise_output_geometry, Serialise_Results_Exception
 
 app = Flask(__name__)
 
-# This data is publicly available as a GeoJSON file from https://catalogue.data.wa.gov.au/dataset/mrwa-road-network
-#path_to_gdb = r"data.gdb"
-##gdf_all_roads: gpd.GeoDataFrame = gpd.read_file(
-#	path_to_gdb,
-#	layer="NTWK_IRIS_Road_Network_20201029"
-#)
+import sqlite3
+import timeit
+
+conn = sqlite3.connect("./data/database.sqlite")
+cur = conn.cursor()
+
 
 @app.route('/secrets/')
 def route_handle_get_secrets():
@@ -53,12 +54,22 @@ def route_handle_get():
 	except Exception:
 		return Response("error: Unknown server error while trying to parse URL parameters.", status=500)
 	
+	conn = sqlite3.connect("./data/database.sqlite")
+	cur = conn.cursor()
+	for slice_request in slice_requests:
+		cur.execute("""
+			SELECT * FROM Road_Network WHERE ROAD=? AND (CWY & ?) != 0 AND END_SLK>=? AND START_SLK<=?;
+		""", (slice_request.road, MAP_CWAY_REQUEST_TO_MASK[slice_request.cway], slice_request.slk_from, slice_request.slk_to))
+		road_segment_records = [*cur]
+		print(f"requesting {(slice_request.road, MAP_CWAY_REQUEST_TO_MASK[slice_request.cway], slice_request.slk_from, slice_request.slk_to)}")
+		print(road_segment_records)
+	
 	try:
 		dm = Data_Manager()
 		dm.load_registry()
 	except:
 		return Response("Server is still booting please try again.", status=500)
-
+	
 	try:
 		slice_results: List[Union[Point, LineString]] = []
 		for slice_request in slice_requests:
@@ -96,5 +107,5 @@ class Slice_Network_Exception(Exception):
 
 
 if __name__ == '__main__':
-	# app.run(host='0.0.0.0', port=8001)
-	waitress_serve(app, host='0.0.0.0', port=8001)
+	app.run(host='0.0.0.0', port=8001)
+# waitress_serve(app, host='0.0.0.0', port=8001)
