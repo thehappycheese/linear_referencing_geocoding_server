@@ -1,0 +1,6 @@
+[submodule "nicks_line_tools"]
+	path = nicks_line_tools
+	url = https://github.com/thehappycheese/nicks_line_tools.git
+[submodule "parse_wkb"]
+	path = parse_wkb
+	url = https://github.com/thehappycheese/parse_wkb.git
