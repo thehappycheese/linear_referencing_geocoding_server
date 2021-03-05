@@ -1,45 +1,25 @@
 import math
+from typing import List, Tuple
 
-from shapely.geometry import LineString, Point
+from nicks_line_tools.Vector2 import Vector2
+from nicks_line_tools.linestring_direction import linestring_direction
+from nicks_line_tools.linestring_interpolate import linestring_interpolate_normalised
+from nicks_line_tools.type_aliases import LineString
 
-from util.direction_of_linestring import direction_of_linestring
 from util.convert_metres_to_degrees import convert_metres_to_degrees
 
-OFFSET_BY_INSTANTANEOUS_DIRECTION = True
 
-
-def get_point_along_linestring_with_offset(line_string: LineString, linestring_slk_start: float, linestring_slk_end: float, slk_cut: float, offset_metres: float = 0) -> Point:
+def get_point_along_linestring_with_offset(line_string: LineString, linestring_slk_start: float, linestring_slk_end: float, slk_cut: float, offset_metres: float = 0) -> Vector2:
 	distance_along_linestring_normalised = (slk_cut - linestring_slk_start) / (linestring_slk_end - linestring_slk_start)
-	
 	if offset_metres == 0:
-		point = line_string.interpolate(
-			distance_along_linestring_normalised,
-			normalized=True
+		point = linestring_interpolate_normalised(
+			line_string,
+			distance_along_linestring_normalised
 		)
 	else:
-		if OFFSET_BY_INSTANTANEOUS_DIRECTION:
-			# With this offset method, error is introduced by sharp corners
-			direction = direction_of_linestring(line_string, distance_along_linestring_normalised)
-			x_offset = math.sin(direction) * convert_metres_to_degrees(offset_metres)
-			y_offset = -math.cos(direction) * convert_metres_to_degrees(offset_metres)
-			point = line_string.interpolate(
-				distance_along_linestring_normalised,
-				normalized=True
-			)
-			point = Point(point.coords[0][0] + x_offset, point.coords[0][1] + y_offset)
-		else:
-			# TODO: the alternate method above is safer. consider deleting this branch.
-			# With this offset method, error is introduced by uneven introduction of extra length in offset linestring at curved corners, plus there is extra effort to offset the entire linestring
-			offset_linestring = line_string.parallel_offset(
-				abs(convert_metres_to_degrees(offset_metres)),
-				side=('left' if offset_metres < 0 else 'right')
-			)
-			if isinstance(offset_linestring, LineString):
-				point = offset_linestring.interpolate(
-					distance_along_linestring_normalised,
-					normalized=True
-				)
-			else:
-				# Sometimes offset will result in a multi line string. the above may just work anyway... but behaviour is undocumented. Error is safer.
-				raise Exception("could not offset point as offset linestring resulted in a multilinestring.")
+		# With this offset method, error is introduced by sharp corners
+		direction = linestring_direction(line_string, distance_along_linestring_normalised).left
+		point = linestring_interpolate_normalised(line_string, distance_along_linestring_normalised)
+		point = point + direction * convert_metres_to_degrees(offset_metres)
+	
 	return point

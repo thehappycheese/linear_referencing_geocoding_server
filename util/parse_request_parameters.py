@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Optional, List
+from typing import Optional, List, Dict
 
 from flask import Request
 
@@ -23,19 +23,19 @@ ERROR_SUGGEST_CORRECT = "Try /?road=H001&slk_from=6.3&slk_to=7 or /?road=H001,H0
 ERROR_SUGGEST_CORRECT_ADVANCED = "Try /?road=H001&slk_from=6.3&slk_to=7&offset=-5&cway=L or /?road=H001,H012&slk_from=6.3,16.4&slk_to=7,17.35&offset=-5,5&cway=L,R"
 
 
-def parse_request_parameters(request: Request) -> List[Slice_Request_Args]:
-	
-	raw_request_roads: Optional[str] = request.args.get("road", default=None)
+def parse_request_parameters(request: Dict) -> List[Slice_Request_Args]:
+	request = {k: v[0] for k, v in request.items()}
+	raw_request_roads: Optional[str] = request.get("road", None)
 	try:
 		assert raw_request_roads is not None
 		request_roads: List[str] = raw_request_roads.split(',')
 		for item in request_roads:
 			assert len(item) > 2
 	except:
-		raise URL_Parameter_Parse_Exception(f"error: missing or malformed url parameter 'road={request.args.get('road', default=None)}'. {ERROR_SUGGEST_CORRECT}") from None
+		raise URL_Parameter_Parse_Exception(f"error: missing or malformed url parameter 'road={request.get('road', None)}'. {ERROR_SUGGEST_CORRECT}") from None
 	
-	raw_request_slk_from: Optional[str] = request.args.get("slk_from", default=None)
-	raw_request_slk_to: Optional[str] = request.args.get("slk_to", default=None)
+	raw_request_slk_from: Optional[str] = request.get("slk_from", None)
+	raw_request_slk_to: Optional[str] = request.get("slk_to", None)
 	
 	try:
 		assert raw_request_slk_from is not None
@@ -65,7 +65,7 @@ def parse_request_parameters(request: Request) -> List[Slice_Request_Args]:
 		request_slk_to.append(max(iter_slk_from, iter_slk_to))
 	
 	# obtain offset
-	raw_request_offset: Optional[str] = request.args.get("offset", default=None)
+	raw_request_offset: Optional[str] = request.get("offset", None)
 	if raw_request_offset is None or raw_request_offset == "":
 		str_request_offset: List[str] = ['0'] * len(request_roads)
 	else:
@@ -80,7 +80,7 @@ def parse_request_parameters(request: Request) -> List[Slice_Request_Args]:
 	except:
 		raise URL_Parameter_Parse_Exception(f"error: optional parameter 'offset={raw_request_offset}' could not be converted to a number. {ERROR_SUGGEST_CORRECT_ADVANCED}") from None
 	
-	raw_request_carriageway: Optional[str] = request.args.get("cway", default=None)
+	raw_request_carriageway: Optional[str] = request.get("cway", None)
 	if raw_request_carriageway is None or raw_request_carriageway == "":
 		unsorted_request_carriageway = ["LRS"] * len(request_roads)
 	else:
