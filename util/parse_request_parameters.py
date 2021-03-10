@@ -1,9 +1,6 @@
 from dataclasses import dataclass
 from typing import Optional, List, Dict
 
-from flask import Request
-
-
 class URL_Parameter_Parse_Exception(Exception):
 	def __init__(self, message):
 		super().__init__(message)

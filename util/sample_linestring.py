@@ -1,8 +1,5 @@
 import math
-from typing import List, Union, Dict, Any
-
-from geopandas import GeoDataFrame
-from shapely.geometry import LineString, Point, MultiLineString
+from typing import List, Dict, Any
 
 from nicks_line_tools import linestring_offset
 from nicks_line_tools.Vector2 import Vector2
