@@ -3,7 +3,9 @@ import shutil
 
 
 def delete_folder_content(folder):
-	"""deletes all files)"""
+	"""deletes all files in a folder. creates the folder first if it does not exist."""
+	if not os.path.exists(folder):
+		os.mkdir(folder)
 	for filename in os.listdir(folder):
 		file_path = os.path.join(folder, filename)
 		try:
