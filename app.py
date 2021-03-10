@@ -4,6 +4,11 @@ import os
 import sys
 import json
 
+try:
+	# makes it work with pyinstaller bundled files
+	os.chdir(sys._MEIPASS)
+except:
+	pass
 
 # This next line would disable the warning when the built-in flask server is started on the local machine:
 
@@ -18,6 +23,8 @@ import refresh_data
 import time
 
 reg = refresh_data.load_registry()
+
+
 
 
 class Slice_Network_Exception(Exception):
@@ -108,7 +115,7 @@ class handle_get(BaseHTTPRequestHandler):
 					"geometries": slice_results
 				}
 			}
-			print(feature_collection_to_send)
+			# print(feature_collection_to_send)
 			dat_to_send = json.dumps(feature_collection_to_send).encode("utf-8")
 			# dat_to_send = serialise_output_geometry(slice_results, request_output_type).encode("utf-8")
 			time_end_slice = time.time()

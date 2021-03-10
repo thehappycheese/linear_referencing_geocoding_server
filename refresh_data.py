@@ -187,3 +187,6 @@ def test():
 	print(f"time to fetch H001 from slk 5 to 10 cway LR {t1 - t0}")
 	print(f"found {len(fetched)} features")
 	print(fetched[0:10])
+
+if __name__ == "__main__":
+	refresh_data()
