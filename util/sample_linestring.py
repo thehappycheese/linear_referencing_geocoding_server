@@ -56,8 +56,8 @@ def sample_linestring(road_segments: List[Dict[str, Any]], slk_cut_first: float,
 		if offset_metres == 0:
 			output = [{"type": "LineString", "coordinates": [[x, y] for x, y in segment]} for segment in output_segments]
 		else:
-			linestring_merge_sequential(output_segments)
-			for segment in output_segments:
+			
+			for segment in linestring_merge_sequential(output_segments):
 				offset_linestrings = linestring_offset(
 					segment,
 					convert_metres_to_degrees(offset_metres)
