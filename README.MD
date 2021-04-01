@@ -9,12 +9,14 @@ This is different from the GeoJSON service available at data.wa.gov.au in four k
 
 1. The original LineString geometry will be properly truncated at the requested SLK interval endpoints.
 
-2. Points will be returned instead of lines if a zero length SLK interval is requested.
+2. `LineString` features will typically be returned, but if `slk_from`=`slk_to` then a `Point` will be returned instead
 
 3. Requested geometry (both points and lines) can be optionally **offset** and/or filtered by carriageway,
 See the 'Usage' section below for more detail.
 
-4. The returned GeoJSON contains a single `{"type":"Feature, ...}` object with multiple geometries, and only the geometry is returned, all other attributes of the road network data are stripped away.
+4. The returned GeoJSON will consist of a single `{"type":"Feature, ...}` object.
+   - `"properties":{}` will be missing or blank.
+   - `"geometry"` can be any valid GeoJSON geometry, including `MultiGeometry` (althoug it will typically be a `Point`, `MultiPoint`, `LineString` or `MultiLineString`)
 
 ## Yes but why?
 The REST service can be conveniently called from Excel or PowerBI to add a text/GeoJSON column based on each row of data.
