@@ -184,7 +184,7 @@ let
         with_query_column,
         "GeoJSON",
         each Text.FromBinary(
-            Web.Contents("http://wxwk343209.mrwa.wa.gov.au:8001/" & [query], [ManualStatusHandling={400,500}])
+            Web.Contents("http://localhost:8001/" & [query], [ManualStatusHandling={400,500}])
         )
     ),
 in
